@@ -268,13 +268,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 aiMoney -= finalWinnings;
                 updateWeeklyWinnings(finalWinnings);
             } else {
+                let amountLost;
                 if (playerMoney - finalWinnings <= 1) {
+                    amountLost = playerMoney - 1;
                     aiMoney += playerMoney - 1;
                     playerMoney = 1;
                 } else {
+                    amountLost = finalWinnings;
                     aiMoney += finalWinnings;
                     playerMoney -= finalWinnings;
                 }
+                updateWeeklyWinnings(-amountLost);
             }
             
             saveMoney();

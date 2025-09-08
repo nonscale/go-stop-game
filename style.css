@@ -4,6 +4,8 @@ body {
     flex-direction: column;
     align-items: center;
     background-color: #f0f0f0;
+    margin: 0; /* Added for consistency */
+    padding: 0; /* Added for consistency */
 }
 
 #game-board {
@@ -82,7 +84,7 @@ body {
     border-radius: 4px; /* Match parent border-radius */
 }
 
-.card.player-card:hover {
+.card:hover {
     border-color: blue;
     transform: translateY(-5px);
 }
@@ -207,4 +209,144 @@ button:disabled {
     padding: 10px;
     background-color: #e9e9e9;
     border-radius: 5px;
+}
+
+
+/* --- Responsive Design --- */
+
+/* For Mobile Portrait */
+@media (max-width: 768px) and (orientation: portrait) {
+    #game-board {
+        width: 98%;
+        margin: 5px;
+        padding: 5px;
+        gap: 5px;
+    }
+
+    #floor-area {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    #info-area {
+        width: 100%;
+        text-align: center;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        padding: 5px;
+        order: -1; /* Move info area to the top on mobile */
+    }
+    
+    #info-area p {
+        margin: 2px 5px;
+        font-size: 12px;
+    }
+
+    .hand, .floor {
+        gap: 5px;
+        min-height: 65px;
+    }
+
+    .card {
+        width: 40px;
+        height: 60px;
+    }
+
+    #ai-hand.hand {
+        min-height: 45px;
+    }
+
+    #ai-hand.hand .card {
+        width: 30px;
+        height: 45px;
+    }
+    
+    .captured-card {
+        width: 22px;
+        height: 33px;
+    }
+
+    .captured-area {
+        min-height: 60px;
+    }
+
+    .section {
+        min-width: 0;
+        padding: 2px;
+    }
+
+    .section h5 {
+        font-size: 10px;
+    }
+
+    .captured-cards {
+        min-height: 40px;
+    }
+
+    .player-name {
+        font-size: 16px;
+        padding: 5px;
+    }
+}
+
+/* For Mobile Landscape */
+@media (max-height: 500px) and (orientation: landscape) {
+    #game-board {
+        gap: 5px;
+        margin: 5px auto;
+        padding: 5px;
+    }
+
+    #ai-area, #player-area, #floor-area {
+        padding: 5px;
+    }
+
+    .hand, .floor {
+        min-height: 0;
+        gap: 5px;
+        padding: 4px;
+    }
+
+    #ai-hand.hand {
+        min-height: 0;
+    }
+
+    .card {
+        width: 36px;
+        height: 54px;
+    }
+
+    #ai-hand.hand .card {
+        width: 28px;
+        height: 42px;
+    }
+
+    .captured-card {
+        width: 20px;
+        height: 30px;
+    }
+
+    .captured-area {
+        min-height: 0;
+    }
+
+    .captured-cards {
+        min-height: 35px;
+    }
+
+    #info-area {
+        width: 150px;
+        padding: 5px;
+    }
+
+    #info-area p {
+        font-size: 11px;
+        margin: 1px 0;
+    }
+
+    .player-name {
+        font-size: 14px;
+        padding: 5px;
+    }
 }
