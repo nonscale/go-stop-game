@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function startGame() {
+    async function startGame(startingPlayer = 'player') {
         deck = [...CARDS].sort(() => Math.random() - 0.5);
         playerHand = []; aiHand = []; floor = []; playerCaptured = []; aiCaptured = [];
         ppukStacks = []; 
@@ -230,13 +230,20 @@ document.addEventListener('DOMContentLoaded', () => {
         bombableMonth = null; canShake = false; isGoStopTurn = false; hasBeenOfferedShake = false;
         for (let i = 0; i < 10; i++) { playerHand.push(deck.pop()); aiHand.push(deck.pop()); }
         for (let i = 0; i < 8; i++) { floor.push(deck.pop()); }
-        currentPlayer = 'player';
+        currentPlayer = startingPlayer;
         render();
-        try {
-            await handleSpecialActions();
-        } catch (e) {
-            console.error("Error during special actions at start:", e);
-            await showNotificationPopup("오류 발생", "게임 시작 중 오류가 발생했습니다: " + e.message);
+
+        if (currentPlayer === 'ai') {
+            playerHandDiv.style.pointerEvents = 'none';
+            setTimeout(aiTurn, 1000);
+        } else {
+            playerHandDiv.style.pointerEvents = 'auto';
+            try {
+                await handleSpecialActions();
+            } catch (e) {
+                console.error("Error during special actions at start:", e);
+                await showNotificationPopup("오류 발생", "게임 시작 중 오류가 발생했습니다: " + e.message);
+            }
         }
     }
 
@@ -287,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadGameData();
         }
         
-        await startGame();
+        await startGame(winner === 'draw' ? 'player' : winner);
     }
 
     function chooseBestCard(cards) {
@@ -451,7 +458,6 @@ document.addEventListener('DOMContentLoaded', () => {
             );
             if (choice === 'yes') {
                 playerShake = true;
-                await showNotificationPopup("흔들기", "김여사님이 흔들었습니다! 이번 판은 점수가 2배가 됩니다.");
             }
         }
     }
