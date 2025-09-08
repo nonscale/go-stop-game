@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go-Stop Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-board">
+        <div id="ai-area">
+            <div id="ai-hand" class="hand"></div>
+            <div class="captured-container">
+                <div id="ai-captured" class="captured-area">
+                    <div class="captured-sections">
+                        <div class="section">
+                            <h5>광 (<span id="ai-gwang-count">0</span>)</h5>
+                            <div id="ai-gwang" class="captured-cards"></div>
+                        </div>
+                        <div class="section">
+                            <h5>십 (<span id="ai-yeol-count">0</span>)</h5>
+                            <div id="ai-yeol" class="captured-cards"></div>
+                        </div>
+                        <div class="section">
+                            <h5>띠 (<span id="ai-tti-count">0</span>)</h5>
+                            <div id="ai-tti" class="captured-cards"></div>
+                        </div>
+                        <div class="section">
+                            <h5>피 (<span id="ai-pi-count">0</span>)</h5>
+                            <div id="ai-pi" class="captured-cards"></div>
+                        </div>
+                    </div>
+                </div>
+                <h2 class="player-name">복지장관</h2>
+            </div>
+        </div>
+        <div id="floor-area">
+            <div id="floor" class="floor"></div>
+            <div id="info-area">
+                <p>김여사 Score: <span id="player-score">0</span></p>
+                <p><b>김여사 Money: <span id="player-money">1000</span> 원</b></p>
+                <p>복지장관 Score: <span id="ai-score">0</span></p>
+                <p><b>복지장관 Money: <span id="ai-money">1000</span> 원</b></p>
+                <p>이번주 딴돈: <span id="weekly-winnings">0</span></p>
+            </div>
+        </div>
+        <div id="player-area">
+            <div class="captured-container">
+                <div id="player-captured" class="captured-area">
+                    <div class="captured-sections">
+                        <div class="section">
+                            <h5>광 (<span id="player-gwang-count">0</span>)</h5>
+                            <div id="player-gwang" class="captured-cards"></div>
+                        </div>
+                        <div class="section">
+                            <h5>십 (<span id="player-yeol-count">0</span>)</h5>
+                            <div id="player-yeol" class="captured-cards"></div>
+                        </div>
+                        <div class="section">
+                            <h5>띠 (<span id="player-tti-count">0</span>)</h5>
+                            <div id="player-tti" class="captured-cards"></div>
+                        </div>
+                        <div class="section">
+                            <h5>피 (<span id="player-pi-count">0</span>)</h5>
+                            <div id="player-pi" class="captured-cards"></div>
+                        </div>
+                    </div>
+                </div>
+                <h2 class="player-name">김여사</h2>
+            </div>
+            <div id="player-hand" class="hand"></div>
+        </div>
+    </div>
+
+    <div id="popup-overlay" class="hidden">
+        <div id="popup-modal">
+            <h3 id="popup-title"></h3>
+            <p id="popup-message"></p>
+            <div id="popup-choices" class="floor"></div> <!-- Area for card choices -->
+            <div id="popup-buttons">
+                <button id="popup-yes-btn">예</button>
+                <button id="popup-no-btn">아니오</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
