@@ -599,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let turnCaptures = [];
         let justPlayedOnFloor = null;
         let playedMonth = null;
+        let capturedInTurn = false;
 
         // --- PART 1: Play card from hand ---
         aiHand.splice(aiHand.findIndex(c => c.id === playedCard.id), 1);
@@ -614,8 +615,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             const matches = floor.filter(c => c.month === playedCard.month);
             if (matches.length === 0) {
+                floor.push(playedCard);
                 justPlayedOnFloor = playedCard;
-                aiStaging.push(playedCard);
             } else {
                 let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
                 floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
@@ -638,7 +639,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        let capturedInTurn = turnCaptures.length > 0;
+        capturedInTurn = turnCaptures.length > 0;
         const isTadak = playedMonth !== null && playedMonth === drawnCard.month && floor.some(c => c.month === drawnCard.month);
 
         if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) {
@@ -646,20 +647,20 @@ document.addEventListener('DOMContentLoaded', () => {
             await stealPi('ai');
             const idx = floor.findIndex(c => c.id === justPlayedOnFloor.id);
             if (idx > -1) {
-                const card = floor.splice(idx, 1)[0];
-                aiStaging.push(card);
+                const cardFromFloor = floor.splice(idx, 1)[0];
+                aiStaging.push(cardFromFloor, drawnCard);
                 capturedInTurn = true;
             }
-        }
-        
-        const matches = floor.filter(c => c.month === drawnCard.month);
-        if (matches.length === 0) {
-            floor.push(drawnCard);
         } else {
-            let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
-            floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
-            aiStaging.push(drawnCard, chosenCard);
-            capturedInTurn = true;
+            const matches = floor.filter(c => c.month === drawnCard.month);
+            if (matches.length === 0) {
+                floor.push(drawnCard);
+            } else {
+                let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
+                floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
+                aiStaging.push(drawnCard, chosenCard);
+                capturedInTurn = true;
+            }
         }
 
         render();
