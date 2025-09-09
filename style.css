@@ -4,8 +4,8 @@ body {
     flex-direction: column;
     align-items: center;
     background-color: #f0f0f0;
-    margin: 0; /* Added for consistency */
-    padding: 0; /* Added for consistency */
+    margin: 0;
+    padding: 0;
 }
 
 #game-board {
@@ -19,6 +19,7 @@ body {
     border: 1px solid #ccc;
     background-color: #fff;
     border-radius: 10px;
+    box-sizing: border-box;
 }
 
 #ai-area, #player-area, #floor-area {
@@ -292,61 +293,97 @@ button:disabled {
 
 /* For Mobile Landscape */
 @media (max-height: 500px) and (orientation: landscape) {
-    #game-board {
-        gap: 5px;
-        margin: 5px auto;
-        padding: 5px;
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent scrollbars */
     }
 
-    #ai-area, #player-area, #floor-area {
-        padding: 5px;
+    #game-board {
+        height: 100vh; /* Make game board take full screen height */
+        width: 100%;
+        box-sizing: border-box; /* Include padding/border in the element's total width and height */
+        margin: 0;
+        padding: 2px;
+        gap: 2px;
+        justify-content: space-between; /* Distribute space */
+    }
+
+    #ai-area, #player-area {
+        flex-basis: 0;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 2px;
+    }
+
+    #floor-area {
+        flex-basis: 0;
+        flex-grow: 1.5; /* Give floor slightly more space */
+        padding: 2px;
+        display: flex;
+        flex-direction: column;
     }
 
     .hand, .floor {
         min-height: 0;
-        gap: 5px;
-        padding: 4px;
-    }
-
-    #ai-hand.hand {
-        min-height: 0;
+        gap: 2px;
+        padding: 2px;
+        flex-grow: 1;
     }
 
     .card {
-        width: 36px;
-        height: 54px;
+        width: 32px;
+        height: 48px;
     }
 
     #ai-hand.hand .card {
-        width: 28px;
-        height: 42px;
+        width: 24px;
+        height: 36px;
     }
 
     .captured-card {
-        width: 20px;
-        height: 30px;
+        width: 18px;
+        height: 27px;
     }
 
     .captured-area {
         min-height: 0;
+        gap: 2px;
+        flex-grow: 1;
     }
 
     .captured-cards {
-        min-height: 35px;
+        min-height: 30px;
     }
 
     #info-area {
-        width: 150px;
-        padding: 5px;
+        width: 100%;
+        box-sizing: border-box;
+        order: -1; /* Move to top of floor area */
+        padding: 2px;
+        flex-grow: 0;
+        flex-shrink: 0;
     }
 
     #info-area p {
-        font-size: 11px;
-        margin: 1px 0;
+        font-size: 10px;
+        margin: 0;
+        display: inline-block; /* Make them sit next to each other */
+        margin-right: 5px;
     }
 
     .player-name {
-        font-size: 14px;
-        padding: 5px;
+        font-size: 12px;
+        padding: 2px;
+        writing-mode: horizontal-tb; /* Make name horizontal */
+        text-align: center;
+    }
+
+    .captured-container {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
     }
 }
