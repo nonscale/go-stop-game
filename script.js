@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     CARDS.push({ id: 41, month: 11, type: TYPES.GWANG, name: '11월 (광)', image: 'Hanafuda_November_Hikari_Alt.svg.png' });
     CARDS.push({ id: 42, month: 11, type: TYPES.TTI, name: '11월 (띠)', image: 'Hanafuda_November_Tanzaku_Alt.svg.png' });
     CARDS.push({ id: 43, month: 11, type: TYPES.YEOL, name: '11월 (끗)', image: 'Hanafuda_November_Tane_Alt.svg.png' });
-    CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (쌍피)', isDoublePi: true, image: 'Hanafuda_November_Kasu_Alt.svg.png' });
+        CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (쌍피)', isDoublePi: true, image: 'Hanafuda_November_Kasu_Alt.svg.png' });
     CARDS.push({ id: 45, month: 12, type: TYPES.GWANG, name: '12월 (비광)', isBiGwang: true, image: 'Hanafuda_December_Hikari_Alt.svg.png' });
     CARDS.push({ id: 46, month: 12, type: TYPES.YEOL, name: '12월 (끗)', isDoublePi: true, image: 'Hanafuda_December_Kasu_1_Alt.svg.png' });
     CARDS.push({ id: 47, month: 12, type: TYPES.TTI, name: '12월 (띠)', image: 'Hanafuda_December_Kasu_2_Alt.svg.png' });
@@ -432,7 +432,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const isTadak = playedMonth !== null && playedMonth === drawnCard.month && floor.some(c => c.month === drawnCard.month);
 
         if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) {
-            await showNotificationPopup('쪽!', '쪽! 축하합니다!');
+            const playerName = player === 'player' ? '김여사' : '복지장관';
+            await showNotificationPopup('쪽!', `${playerName}님, 쪽! 축하합니다!`);
             await stealPi(player);
             const idx = floor.findIndex(c => c.id === justPlayedOnFloor.id);
             if (idx > -1) {
