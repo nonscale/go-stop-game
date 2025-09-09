@@ -8,6 +8,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerMoneySpan = document.getElementById('player-money');
     const aiMoneySpan = document.getElementById('ai-money');
 
+    playerHandDiv.addEventListener('click', (e) => {
+        if (currentPlayer !== 'player' || isGoStopTurn) return;
+        const cardDiv = e.target.closest('.card');
+        if (cardDiv && cardDiv.dataset.cardId) {
+            const cardId = parseInt(cardDiv.dataset.cardId, 10);
+            playTurn('player', cardId);
+        }
+    });
+
     // Popup Elements
     const popupOverlay = document.getElementById('popup-overlay');
     const popupTitle = document.getElementById('popup-title');
@@ -587,6 +596,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         return bestMove.card || (aiHand.length > 0 ? aiHand[Math.floor(Math.random() * aiHand.length)] : null);
+    }
+
+    function getWeeklyWinnings() {
+        const today = new Date();
+        const oneWeekInMs = 7 * 24 * 60 * 60 * 1000;
+        let weeklyData = JSON.parse(localStorage.getItem('goStopWeeklyWinnings_v2'));
+
+        // Check if a week has passed since the start date
+        if (!weeklyData || (today.getTime() - new Date(weeklyData.startDate).getTime()) > oneWeekInMs) {
+            weeklyData = {
+                startDate: today.toISOString(),
+                initialMoney: playerMoney
+            };
+            localStorage.setItem('goStopWeeklyWinnings_v2', JSON.stringify(weeklyData));
+        }
+
+        const winnings = playerMoney - weeklyData.initialMoney;
+        return { amount: winnings };
     }
 
     function getAIBestMove() {
