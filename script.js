@@ -226,8 +226,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function shuffleDeck(array) {
+        let currentIndex = array.length,  randomIndex;
+
+        // While there remain elements to shuffle.
+        while (currentIndex > 0) {
+
+            // Pick a remaining element.
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // And swap it with the current element.
+            [array[currentIndex], array[randomIndex]] = [
+                array[randomIndex], array[currentIndex]];
+        }
+
+        return array;
+    }
+
     async function startGame(startingPlayer = 'player') {
-        deck = [...CARDS].sort(() => Math.random() - 0.5);
+        deck = shuffleDeck([...CARDS]); // Using new shuffle algorithm
         playerHand = []; aiHand = []; floor = []; playerCaptured = []; aiCaptured = []; aiStaging = [];
         ppukStacks = []; 
         playerShake = false; aiShake = false; 
