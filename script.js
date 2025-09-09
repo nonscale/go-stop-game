@@ -75,8 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let ppukStacks = [], playerShake = false, aiShake = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
     let isGoStopTurn = false;
 
-    
-
     function loadGameData() {
         playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
         aiMoney = parseInt(localStorage.getItem('goStopAiMoney_v2') || '50000');
@@ -93,10 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function createCardDiv(card, isCaptured = false) {
         const div = document.createElement('div');
         div.classList.add(isCaptured ? 'captured-card' : 'card');
-        if (card && card.isBomb) {
-            div.classList.add('bomb');
-            div.title = '폭탄으로 사용 가능한 카드입니다.';
-        }
         if (card) {
             div.dataset.cardId = card.id;
         }
@@ -723,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Start Game ---
-    async function showWelcomePopupIfNeeded() {
+    (async () => {
         const welcomeShown = localStorage.getItem('goStopWelcomeShown');
         if (!welcomeShown) {
             popupModal.classList.add('welcome-popup');
@@ -737,13 +731,8 @@ document.addEventListener('DOMContentLoaded', () => {
             popupModal.classList.remove('welcome-popup');
             localStorage.setItem('goStopWelcomeShown', 'true');
         }
-    }
-
-    async function initializeGame() {
-        await showWelcomePopupIfNeeded();
+        
         loadGameData();
         startGame();
-    }
-
-    initializeGame();
+    })();
 });
