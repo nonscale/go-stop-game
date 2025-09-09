@@ -336,6 +336,36 @@ document.addEventListener('DOMContentLoaded', () => {
         return cards.sort((a, b) => TYPE_VALUES[b.type] - TYPE_VALUES[a.type])[0];
     }
 
+    function stealPi(player) {
+        const opponent = player === 'player' ? 'ai' : 'player';
+        const opponentCaptured = opponent === 'player' ? playerCaptured : aiCaptured;
+        const playerCapturedPile = player === 'player' ? playerCaptured : aiCaptured;
+
+        // Prefer to steal a single pi
+        let stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI && !c.isDoublePi);
+        
+        // If no single pi, steal a double pi that is also a YEOL/끗
+        if (stolenCardIndex === -1) {
+            stolenCardIndex = opponentCaptured.findIndex(c => c.isDoublePi && c.type === TYPES.YEOL);
+        }
+
+        // If still no card, steal any double pi
+        if (stolenCardIndex === -1) {
+            stolenCardIndex = opponentCaptured.findIndex(c => c.isDoublePi);
+        }
+        
+        // If still no card, check for any PI card (this is a fallback)
+        if (stolenCardIndex === -1) {
+            stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI);
+        }
+
+        if (stolenCardIndex > -1) {
+            const stolenCard = opponentCaptured.splice(stolenCardIndex, 1)[0];
+            playerCapturedPile.push(stolenCard);
+            render();
+        }
+    }
+
     async function playTurn(player, cardId) {
         try {
             if (currentPlayer !== player) return;
