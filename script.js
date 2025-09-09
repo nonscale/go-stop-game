@@ -904,8 +904,8 @@ document.addEventListener('DOMContentLoaded', () => {
             popupModal.classList.add('welcome-popup');
 
             await showPopup(
-                "복지장관의 편지",
-                "안녕하세요 김여사님.\n전 복지장관입니다.\n\n열심히 산 당신께 5만원을 게임머니로 드렸습니다.\n저랑 게임해서 돈도 벌어서 손녀들에게 맛있는거 사주세요~",
+                "보건복지부에서 온 편지",
+                "안녕하세요 김여사님.\n\n열심히 산 당신께 5만원을 게임머니로 드렸습니다.\n저랑 게임해서 돈도 벌어서 손녀들에게 맛있는거 사주세요~",
                 [{ text: '준비되면 누르세요', value: 'start' }]
             );
 
