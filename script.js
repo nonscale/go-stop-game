@@ -302,13 +302,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 playerMoney += finalWinnings;
                 aiMoney -= finalWinnings;
             } else {
-                let amountLost;
                 if (playerMoney - finalWinnings <= 1) {
-                    amountLost = playerMoney - 1;
                     aiMoney += playerMoney - 1;
                     playerMoney = 1;
                 } else {
-                    amountLost = finalWinnings;
                     aiMoney += finalWinnings;
                     playerMoney -= finalWinnings;
                 }
@@ -325,9 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playerMoney <= 0 || aiMoney <= 0) {
             const bankruptPlayer = playerMoney <= 0 ? '김여사' : '복지장관';
             await showPopup("게임 종료", `${bankruptPlayer}님이 파산했습니다! 새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
-            localStorage.removeItem('goStopPlayerMoney_v2');
-            localStorage.removeItem('goStopAiMoney_v2');
-            localStorage.removeItem('goStopWinnings');
+            localStorage.clear(); // Clear all game data on bankruptcy
             loadGameData();
         }
         
@@ -713,6 +708,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (piCount >= 10) score += piCount - 9;
 
         return { score, piCount, gwangCount: gwangs.length };
+    }
+
+    function checkForSpecials() {
+        const hand = playerHand;
+        const handCounts = hand.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
+        canShake = false;
+        for (const month in handCounts) {
+            if (handCounts[month] >= 3) {
+                canShake = true;
+                break; // Found a shake, no need to check further
+            }
+        }
     }
 
     // --- Start Game ---
