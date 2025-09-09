@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
     CARDS.push({ id: 41, month: 11, type: TYPES.GWANG, name: '11월 (광)', image: 'Hanafuda_November_Hikari_Alt.svg.png' });
     CARDS.push({ id: 42, month: 11, type: TYPES.TTI, name: '11월 (띠)', image: 'Hanafuda_November_Tanzaku_Alt.svg.png' });
     CARDS.push({ id: 43, month: 11, type: TYPES.YEOL, name: '11월 (끗)', image: 'Hanafuda_November_Tane_Alt.svg.png' });
-        CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (쌍피)', isDoublePi: true, image: 'Hanafuda_November_Kasu_Alt.svg.png' });
+        CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (쌍피) BUG-TEST', isDoublePi: true, image: 'Hanafuda_November_Kasu_Alt.svg.png' });
     CARDS.push({ id: 45, month: 12, type: TYPES.GWANG, name: '12월 (비광)', isBiGwang: true, image: 'Hanafuda_December_Hikari_Alt.svg.png' });
     CARDS.push({ id: 46, month: 12, type: TYPES.YEOL, name: '12월 (끗)', isDoublePi: true, image: 'Hanafuda_December_Kasu_1_Alt.svg.png' });
     CARDS.push({ id: 47, month: 12, type: TYPES.TTI, name: '12월 (띠)', image: 'Hanafuda_December_Kasu_2_Alt.svg.png' });
@@ -380,7 +380,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const ppukIndex = ppukStacks.indexOf(playedCard.month);
             if (ppukIndex > -1) {
-                await showNotificationPopup("뻑!", `${playedCard.month}월 뻑을 해결했습니다!`);
+                const playerName = player === 'player' ? '김여사' : '복지장관';
+                await showNotificationPopup("뻑!", `${playerName}님이 ${playedCard.month}월 뻑을 해결했습니다!`);
                 ppukStacks.splice(ppukIndex, 1);
                 const ppukCards = floor.filter(c => c.month === playedCard.month);
                 floor = floor.filter(c => c.month !== playedCard.month);
@@ -466,12 +467,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (isTadak) {
-            await showNotificationPopup("따닥!", "따닥! 상대방의 피를 한 장 가져옵니다.");
+            const playerName = player === 'player' ? '김여사' : '복지장관';
+            await showNotificationPopup("따닥!", `${playerName}님의 따닥! 상대방의 피를 한 장 가져옵니다.`);
             await stealPi(player);
         }
 
         if (floor.length === 0 && capturedInTurn) {
-             await showNotificationPopup("싹쓸이!", "바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.");
+             const playerName = player === 'player' ? '김여사' : '복지장관';
+             await showNotificationPopup("싹쓸이!", `${playerName}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
              await stealPi(player);
         }
 
@@ -484,7 +487,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (ppukMonths.length > 0) {
-            await showNotificationPopup("뻑!", `뻑! - ${ppukMonths.join(', ')}월 카드가 바닥에 3장이 되었습니다!`);
+            const playerName = player === 'player' ? '김여사' : '복지장관';
+            await showNotificationPopup("뻑!", `${playerName}님의 턴에 뻑! - ${ppukMonths.join(', ')}월 카드가 바닥에 3장이 되었습니다!`);
         }
 
         render();
