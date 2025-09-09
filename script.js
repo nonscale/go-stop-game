@@ -13,9 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const popupOverlay = document.getElementById('popup-overlay');
     const popupTitle = document.getElementById('popup-title');
     const popupMessage = document.getElementById('popup-message');
-    const popupYesBtn = document.getElementById('popup-yes-btn');
-    const popupNoBtn = document.getElementById('popup-no-btn');
     const popupChoicesDiv = document.getElementById('popup-choices');
+    const popupModal = document.getElementById('popup-modal');
 
     // --- Card Definitions ---
     const CARDS = [];
@@ -81,10 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
     function loadGameData() {
-        playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '10000');
-        aiMoney = parseInt(localStorage.getItem('goStopAiMoney_v2') || '10000');
+        playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
+        aiMoney = parseInt(localStorage.getItem('goStopAiMoney_v2') || '50000');
         const weeklyWinnings = getWeeklyWinnings();
-        weeklyWinningsSpan.textContent = `${weeklyWinnings.amount} 원`;
+        if (weeklyWinningsSpan) { // Check if element exists
+            weeklyWinningsSpan.textContent = `${weeklyWinnings.amount} 원`;
+        }
         playerMoneySpan.textContent = playerMoney;
         aiMoneySpan.textContent = aiMoney;
     }
@@ -292,8 +293,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playerMoney <= 0 || aiMoney <= 0) {
             const bankruptPlayer = playerMoney <= 0 ? '김여사' : '복지장관';
             await showPopup("게임 종료", `${bankruptPlayer}님이 파산했습니다! 새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
-            localStorage.removeItem('goStopPlayerMoney');
-            localStorage.removeItem('goStopAiMoney');
+            localStorage.removeItem('goStopPlayerMoney_v2');
+            localStorage.removeItem('goStopAiMoney_v2');
             localStorage.removeItem('goStopWinnings');
             loadGameData();
         }
@@ -470,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { score } = calculateScore(playerCaptured, playerGoCount);
         isGoStopTurn = true;
 
-        const choice = await showPopup('고 또는 스톱', `현재 점수는 ${score}점 입니다. '고' 하시겠습니까?`,
+        const choice = await showPopup('고 또는 스톱', `현재 점수는 ${score}점 입니다. '고' 하시겠습니까?`, 
             [
                 { text: '고', value: 'go' },
                 { text: '스톱', value: 'stop' }
@@ -527,7 +528,54 @@ document.addEventListener('DOMContentLoaded', () => {
         return { action: 'play' };
     }
 
+    function calculateBestMove() {
+        let bestMove = { card: null, score: -Infinity };
+
+        for (const card of aiHand) {
+            let currentScore = 0;
+            const matches = floor.filter(c => c.month === card.month);
+
+            if (matches.length > 0) {
+                // This is a capture move
+                const bestMatch = chooseBestCard(matches);
+                currentScore += 10; // Base score for any capture
+                currentScore += TYPE_VALUES[bestMatch.type] * 2;
+                if (bestMatch.isDoublePi) currentScore += 5;
+
+                // Bonus if it helps complete a Yaku
+                const futureCaptures = [...aiCaptured, card, bestMatch];
+                const scoreBefore = calculateScore(aiCaptured).score;
+                const scoreAfter = calculateScore(futureCaptures).score;
+                if (scoreAfter > scoreBefore) {
+                    currentScore += (scoreAfter - scoreBefore) * 10;
+                }
+
+            } else {
+                // This is a discard move
+                currentScore -= TYPE_VALUES[card.type];
+                if (card.isDoublePi) currentScore -= 5;
+
+                // Penalty for giving player a good card. Check if player can take it.
+                const playerHandHasMatch = playerHand.some(c => c.month === card.month);
+                if(playerHandHasMatch) {
+                    currentScore -= 10;
+                }
+            }
+
+            if (currentScore > bestMove.score) {
+                bestMove = { card: card, score: currentScore };
+            }
+        }
+
+        return bestMove.card || (aiHand.length > 0 ? aiHand[Math.floor(Math.random() * aiHand.length)] : null);
+    }
+
     function getAIBestMove() {
+        // --- Desperation Mode ---
+        if (aiMoney <= 20000) {
+            return calculateBestMove();
+        }
+
         // --- Dynamic Difficulty Logic ---
         const today = new Date();
         const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
@@ -568,45 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // --- Original Best Move Logic ---
-        let bestMove = { card: null, score: -Infinity };
-
-        for (const card of aiHand) {
-            let currentScore = 0;
-            const matches = floor.filter(c => c.month === card.month);
-
-            if (matches.length > 0) {
-                // This is a capture move
-                const bestMatch = chooseBestCard(matches);
-                currentScore += 10; // Base score for any capture
-                currentScore += TYPE_VALUES[bestMatch.type] * 2;
-                if (bestMatch.isDoublePi) currentScore += 5;
-
-                // Bonus if it helps complete a Yaku
-                const futureCaptures = [...aiCaptured, card, bestMatch];
-                const scoreBefore = calculateScore(aiCaptured).score;
-                const scoreAfter = calculateScore(futureCaptures).score;
-                if (scoreAfter > scoreBefore) {
-                    currentScore += (scoreAfter - scoreBefore) * 10;
-                }
-
-            } else {
-                // This is a discard move
-                currentScore -= TYPE_VALUES[card.type];
-                if (card.isDoublePi) currentScore -= 5;
-
-                // Penalty for giving player a good card. Check if player can take it.
-                const playerHandHasMatch = playerHand.some(c => c.month === card.month);
-                if(playerHandHasMatch) {
-                    currentScore -= 10;
-                }
-            }
-
-            if (currentScore > bestMove.score) {
-                bestMove = { card: card, score: currentScore };
-            }
-        }
-
-        return bestMove.card || (aiHand.length > 0 ? aiHand[Math.floor(Math.random() * aiHand.length)] : null);
+        return calculateBestMove();
     }
 
     async function updateScores(player) {
@@ -715,7 +725,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = getWeeklyWinnings();
         data.amount += amount;
         localStorage.setItem('goStopWinnings', JSON.stringify(data));
-        weeklyWinningsSpan.textContent = `${data.amount} 원`;
+        if (weeklyWinningsSpan) { // Check if element exists
+            weeklyWinningsSpan.textContent = `${data.amount} 원`;
+        }
     }
 
     async function stealPi(player) {
@@ -750,6 +762,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Start Game ---
-    loadGameData();
-    startGame();
+    async function showWelcomePopupIfNeeded() {
+        const welcomeShown = localStorage.getItem('goStopWelcomeShown');
+        if (!welcomeShown) {
+            popupModal.classList.add('welcome-popup');
+
+            await showPopup(
+                "복지장관의 편지",
+                "안녕하세요 김여사님. 전 복지장관입니다. 열심히 산 당신께 5만원을 게임머니로 드렸습니다. 저랑 게임해서 돈도 벌어서 손녀들에게 맛있는거 사주세요~",
+                [{ text: '준비되면 누르세요', value: 'start' }]
+            );
+
+            popupModal.classList.remove('welcome-popup');
+            localStorage.setItem('goStopWelcomeShown', 'true');
+        }
+    }
+
+    async function initializeGame() {
+        await showWelcomePopupIfNeeded();
+        loadGameData();
+        startGame();
+    }
+
+    initializeGame();
 });

@@ -120,14 +120,18 @@ body {
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #f5f5f5;
-    text-align: left;
-    width: 200px; /* Fixed width */
-    flex-shrink: 0; /* Prevent shrinking */
+    text-align: center;
+    flex-grow: 1;
 }
 
-#info-area p {
-    margin: 4px 0;
+.player-info {
+    margin: 5px 0;
     font-size: 14px;
+}
+
+.player-info.player-info-main {
+    font-size: 16px;
+    font-weight: bold;
 }
 
 button {
@@ -162,7 +166,41 @@ button:disabled {
     text-align: center;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     min-width: 250px;
+    max-width: 400px;
 }
+
+#popup-modal.welcome-popup {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #333;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+#popup-modal.welcome-popup #popup-title {
+    color: #1a2a6c;
+    font-size: 24px;
+}
+
+#popup-modal.welcome-popup p {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+#popup-modal.welcome-popup #popup-buttons button {
+    background-color: #1a2a6c;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 12px 30px;
+    transition: background-color 0.3s ease;
+    font-size: 18px;
+}
+
+#popup-modal.welcome-popup #popup-buttons button:hover {
+    background-color: #b21f1f;
+}
+
 
 #popup-modal h3 {
     margin-top: 0;
@@ -232,16 +270,17 @@ button:disabled {
     #info-area {
         width: 100%;
         text-align: center;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: space-around;
         padding: 5px;
         order: -1; /* Move info area to the top on mobile */
     }
     
-    #info-area p {
+    .player-info {
         margin: 2px 5px;
         font-size: 12px;
+    }
+
+    .player-info.player-info-main {
+        font-size: 14px;
     }
 
     .hand, .floor {
@@ -367,11 +406,13 @@ button:disabled {
         flex-shrink: 0;
     }
 
-    #info-area p {
-        font-size: 10px;
-        margin: 0;
-        display: inline-block; /* Make them sit next to each other */
-        margin-right: 5px;
+    .player-info {
+        font-size: 11px;
+        margin: 1px 0;
+    }
+
+    .player-info.player-info-main {
+        font-size: 12px;
     }
 
     .player-name {
