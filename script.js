@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const floorDiv = document.getElementById('floor');
     const playerScoreSpan = document.getElementById('player-score');
     const aiScoreSpan = document.getElementById('ai-score');
-    const weeklyWinningsSpan = document.getElementById('weekly-winnings');
     const playerMoneySpan = document.getElementById('player-money');
     const aiMoneySpan = document.getElementById('ai-money');
 
@@ -74,7 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer;
     let playerMoney, aiMoney;
     let ppukStacks = [], playerShake = false, aiShake = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
-    let popupCallback = null;
     let isGoStopTurn = false;
 
     
@@ -82,10 +80,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadGameData() {
         playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
         aiMoney = parseInt(localStorage.getItem('goStopAiMoney_v2') || '50000');
-        const weeklyWinnings = getWeeklyWinnings();
-        if (weeklyWinningsSpan) { // Check if element exists
-            weeklyWinningsSpan.textContent = `${weeklyWinnings.amount} 원`;
-        }
         playerMoneySpan.textContent = playerMoney;
         aiMoneySpan.textContent = aiMoney;
     }
@@ -162,8 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCaptured('ai', aiCaptured);
         playerMoneySpan.textContent = playerMoney;
         aiMoneySpan.textContent = aiMoney;
-        playerScoreSpan.textContent = calculateScore(playerCaptured, playerGoCount).score;
-        aiScoreSpan.textContent = calculateScore(aiCaptured, aiGoCount).score;
+        playerScoreSpan.textContent = calculateScore(playerCaptured).score;
+        aiScoreSpan.textContent = calculateScore(aiCaptured).score;
     }
 
     function hidePopup() {
@@ -228,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ppukStacks = []; 
         playerShake = false; aiShake = false; 
         playerGoCount = 0; aiGoCount = 0;
-        bombableMonth = null; canShake = false; isGoStopTurn = false; hasBeenOfferedShake = false;
+        canShake = false; isGoStopTurn = false; hasBeenOfferedShake = false;
         for (let i = 0; i < 10; i++) { playerHand.push(deck.pop()); aiHand.push(deck.pop()); }
         for (let i = 0; i < 8; i++) { floor.push(deck.pop()); }
         currentPlayer = startingPlayer;
@@ -248,26 +242,65 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function endRound(winner, scoreDetails) {
+    async function endRound(winner) {
         let message;
         if (winner === 'draw') {
             message = "이번 판은 무승부입니다!";
         } else {
-            const { score, goBonus, gwangBak, piBak, shakeBonus } = scoreDetails;
-            let finalWinnings = score;
-            message = `${winner === 'player' ? '김여사' : '복지장관'}님이 ${score}점으로 승리!`;
+            const winnerName = winner === 'player' ? '김여사' : '복지장관';
+            const winnerCaptured = winner === 'player' ? playerCaptured : aiCaptured;
+            const loserCaptured = winner === 'player' ? aiCaptured : playerCaptured;
+            const winnerGoCount = winner === 'player' ? playerGoCount : aiGoCount;
+            const loserGoCount = winner === 'player' ? aiGoCount : playerGoCount;
+            const winnerShake = winner === 'player' ? playerShake : aiShake;
 
-            if (goBonus > 1) { finalWinnings *= goBonus; message += `\n- 고 보너스 x${goBonus}`; }
-            if (gwangBak) { finalWinnings *= 2; message += `\n- 광박 x2`; }
-            if (piBak) { finalWinnings *= 2; message += `\n- 피박 x2`; }
-            if (shakeBonus) { finalWinnings *= 2; message += `\n- 흔들기 x2`; }
+            const winnerScoreInfo = calculateScore(winnerCaptured);
+            const loserScoreInfo = calculateScore(loserCaptured);
+            
+            let finalScore = winnerScoreInfo.score;
+            message = `${winnerName}님이 ${finalScore}점으로 승리!`;
 
-            finalWinnings *= 100;
+            let multiplier = 1;
+
+            // Go Bonus
+            if (winnerGoCount === 1) finalScore += 1;
+            if (winnerGoCount === 2) finalScore += 2;
+            if (winnerGoCount >= 3) multiplier *= (2 ** (winnerGoCount - 2));
+            
+            // Go-bak
+            if (loserGoCount >= 1) {
+                multiplier *= 2;
+                message += `\n- 고박! x2`;
+            }
+
+            // Shake bonus
+            if (winnerShake) {
+                multiplier *= 2;
+                message += `\n- 흔들기 x2`;
+            }
+
+            // Gwang-bak
+            const gwangBak = winnerScoreInfo.gwangCount >= 3 && loserScoreInfo.gwangCount === 0;
+            if (gwangBak) {
+                multiplier *= 2;
+                message += `\n- 광박! x2`;
+            }
+
+            // Pi-bak
+            const piBak = winnerScoreInfo.piCount >= 10 && loserScoreInfo.piCount < 5;
+            if (piBak) {
+                multiplier *= 2;
+                message += `\n- 피박! x2`;
+            }
+
+            // Apply multiplier
+            finalScore *= multiplier;
+
+            let finalWinnings = finalScore * 100;
 
             if (winner === 'player') {
                 playerMoney += finalWinnings;
                 aiMoney -= finalWinnings;
-                updateWeeklyWinnings(finalWinnings);
             } else {
                 let amountLost;
                 if (playerMoney - finalWinnings <= 1) {
@@ -279,7 +312,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     aiMoney += finalWinnings;
                     playerMoney -= finalWinnings;
                 }
-                updateWeeklyWinnings(-amountLost);
             }
             
             saveMoney();
@@ -365,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const drawnCard = deck.pop();
         if (!drawnCard) {
-            await endRound('draw', {});
+            await endRound('draw');
             return;
         }
 
@@ -468,10 +500,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function handleGoStopPopup() {
-        const { score } = calculateScore(playerCaptured, playerGoCount);
         isGoStopTurn = true;
 
-        const choice = await showPopup('고 또는 스톱', `현재 점수는 ${score}점 입니다. '고' 하시겠습니까?`, 
+        const choice = await showPopup('고 또는 스톱', `현재 점수는 ${calculateScore(playerCaptured).score}점 입니다. '고' 하시겠습니까?`, 
             [
                 { text: '고', value: 'go' },
                 { text: '스톱', value: 'stop' }
@@ -484,8 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await showNotificationPopup("고!", '김여사님이 고!를 외쳤습니다.');
             switchTurn('player');
         } else {
-            const scoreDetails = calculateScore(playerCaptured, playerGoCount, true, 'player', aiCaptured);
-            await endRound('player', scoreDetails);
+            await endRound('player');
         }
     }
 
@@ -506,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (aiHand.length > 0) {
                     await playTurn('ai', aiHand[0].id);
                 } else {
-                    await endRound('draw', {});
+                    await endRound('draw');
                 }
             }
         } catch (e) {
@@ -620,39 +650,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function updateScores(player) {
-        const goCount = player === 'player' ? playerGoCount : aiGoCount;
-        const captured = player === 'player' ? playerCaptured : aiCaptured;
-        const { score } = calculateScore(captured, goCount);
+        const playerScoreInfo = calculateScore(playerCaptured);
+        const aiScoreInfo = calculateScore(aiCaptured);
 
         if (player === 'player') {
-            if (score >= 7 && !isGoStopTurn && playerHand.length > 0) {
+            if (playerScoreInfo.score >= 7 && !isGoStopTurn && playerHand.length > 0) {
                 await handleGoStopPopup();
                 return true; // Go/Stop decision was handled
             }
         } else { // AI's turn
-            if (score >= 7 && !isGoStopTurn) {
-                if (score >= 7 || aiHand.length === 0) { // Stops at 7+ or last card
-                    const scoreDetails = calculateScore(aiCaptured, aiGoCount, true, 'ai', playerCaptured);
-                    await endRound('ai', scoreDetails);
-                } else { // AI decides to Go
-                    aiGoCount++;
-                    await showNotificationPopup("고!", '복지장관이 고!를 외쳤습니다.');
-                    switchTurn('ai');
-                }
+            if (aiScoreInfo.score >= 7 && !isGoStopTurn) {
+                // AI stops if it can win
+                await endRound('ai');
                 return true; // Go/Stop decision was made
             }
         }
         
         // If the deck is empty and no one could make a move, end the round
         if (deck.length === 0 && playerHand.length === 0 && aiHand.length === 0) {
-            const playerScore = calculateScore(playerCaptured, playerGoCount, true, 'player', aiCaptured);
-            const aiScore = calculateScore(aiCaptured, aiGoCount, true, 'ai', playerCaptured);
-            if (playerScore.score > aiScore.score) {
-                await endRound('player', playerScore);
-            } else if (aiScore.score > playerScore.score) {
-                await endRound('ai', aiScore);
+            const playerScore = calculateScore(playerCaptured).score;
+            const aiScore = calculateScore(aiCaptured).score;
+            if (playerScore > aiScore) {
+                await endRound('player');
+            } else if (aiScore > playerScore) {
+                await endRound('ai');
             } else {
-                await endRound('draw', {});
+                await endRound('draw');
             }
             return true;
         }
@@ -660,10 +683,9 @@ document.addEventListener('DOMContentLoaded', () => {
         return false; // No Go/Stop decision
     }
 
-    function calculateScore(captured, goCount = 0, isFinal = false, winnerPlayer = null, opponentCaptured = null) {
+    function calculateScore(captured) {
         if (!captured) {
-            console.error("calculateScore error: 'captured' parameter is null.");
-            return { score: 0 };
+            return { score: 0, piCount: 0, gwangCount: 0 };
         }
 
         let score = 0;
@@ -677,88 +699,20 @@ document.addEventListener('DOMContentLoaded', () => {
             else score += gwangs.some(c => c.isBiGwang) ? 2 : 3;
         }
         if (ttis.length >= 5) score += ttis.length - 4;
-        if (ttis.filter(c => [2, 6, 10].includes(c.id)).length === 3) score += 3;
-        if (ttis.filter(c => [22, 34, 38].includes(c.id)).length === 3) score += 3;
-        if (ttis.filter(c => [14, 18, 26].includes(c.id)).length === 3) score += 3;
+        if (ttis.filter(c => [2, 6, 10].includes(c.id)).length === 3) score += 3; // Hong-dan
+        if (ttis.filter(c => [22, 34, 38].includes(c.id)).length === 3) score += 3; // Cheong-dan
+        if (ttis.filter(c => [14, 18, 26].includes(c.id)).length === 3) score += 3; // Cho-dan
+        
         const godoriCards = yeols.filter(c => [5, 13, 30].includes(c.id));
         if (godoriCards.length === 3) score += 5;
+        
         const nonGodoriYeols = yeols.filter(c => !godoriCards.includes(c));
         if (nonGodoriYeols.length + godoriCards.length >= 5) score += nonGodoriYeols.length + godoriCards.length - 4;
+        
         const piCount = pis.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0);
         if (piCount >= 10) score += piCount - 9;
 
-        if (!isFinal) return { score };
-
-        let goBonus = 1;
-        if (goCount === 1) score += 1;
-        if (goCount === 2) score += 2;
-        if (goCount >= 3) goBonus = 2 ** (goCount - 2);
-
-        if (!opponentCaptured) {
-            console.error("calculateScore error: 'opponentCaptured' is null for final calculation.");
-            return { score, goBonus, gwangBak: false, piBak: false, shakeBonus: false };
-        }
-
-        const loserCaptured = opponentCaptured;
-        const loserPiCount = loserCaptured.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0);
-        const loserGwangCount = loserCaptured.filter(c => c.type === TYPES.GWANG).length;
-
-        const piBak = score > 0 && piCount >= 10 && loserPiCount < 5;
-        const gwangBak = score > 0 && gwangs.length >= 3 && loserGwangCount === 0;
-        const shakeBonus = (winnerPlayer === 'player' && playerShake) || (winnerPlayer === 'ai' && aiShake);
-
-        return { score, goBonus, gwangBak, piBak, shakeBonus };
-    }
-
-    function getWeeklyWinnings() {
-        const data = JSON.parse(localStorage.getItem('goStopWinnings'));
-        if (!data) return { amount: 0, weekStartDate: new Date().getTime() };
-        const oneWeek = 7 * 24 * 60 * 60 * 1000;
-        if (new Date().getTime() - data.weekStartDate > oneWeek) {
-            localStorage.removeItem('goStopWinnings');
-            return { amount: 0, weekStartDate: new Date().getTime() };
-        }
-        return data;
-    }
-
-    function updateWeeklyWinnings(amount) {
-        const data = getWeeklyWinnings();
-        data.amount += amount;
-        localStorage.setItem('goStopWinnings', JSON.stringify(data));
-        if (weeklyWinningsSpan) { // Check if element exists
-            weeklyWinningsSpan.textContent = `${data.amount} 원`;
-        }
-    }
-
-    async function stealPi(player) {
-        const victimHand = player === 'player' ? aiCaptured : playerCaptured;
-        const stealerHand = player === 'player' ? playerCaptured : aiCaptured;
-        const piIndex = victimHand.findIndex(c => c.type === TYPES.PI && !c.isDoublePi);
-        if (piIndex > -1) {
-            const stolenPi = victimHand.splice(piIndex, 1)[0];
-            stealerHand.push(stolenPi);
-            await showNotificationPopup("피 뺏기", `상대방의 피를 한 장 가져옵니다!`);
-        }
-    }
-
-    playerHandDiv.addEventListener('click', e => {
-        if (currentPlayer !== 'player' || !e.target.closest('.card')) return;
-        // Prevent clicks while a popup is open
-        if (!popupOverlay.classList.contains('hidden')) return;
-        const cardDiv = e.target.closest('.card');
-        playTurn('player', parseInt(cardDiv.dataset.cardId));
-    });
-
-    function checkForSpecials() {
-        const hand = playerHand;
-        const handCounts = hand.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
-        canShake = false;
-        for (const month in handCounts) {
-            if (handCounts[month] >= 3) {
-                canShake = true;
-                break; // Found a shake, no need to check further
-            }
-        }
+        return { score, piCount, gwangCount: gwangs.length };
     }
 
     // --- Start Game ---
