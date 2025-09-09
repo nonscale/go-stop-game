@@ -238,6 +238,20 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPlayer = startingPlayer;
         render();
 
+        // Nagari (misdeal) check for 4 cards of the same month
+        const monthCounts = [...playerHand, ...aiHand, ...floor].reduce((acc, card) => {
+            acc[card.month] = (acc[card.month] || 0) + 1;
+            return acc;
+        }, {});
+
+        const isMisdeal = Object.values(monthCounts).some(count => count === 4);
+
+        if (isMisdeal) {
+            await showNotificationPopup("재시작 (나가리)", "같은 월의 패 4장이 한꺼번에 깔려 판을 다시 시작합니다.");
+            startGame(startingPlayer);
+            return;
+        }
+
         if (currentPlayer === 'ai') {
             playerHandDiv.style.pointerEvents = 'none';
             setTimeout(aiTurn, 1000);
