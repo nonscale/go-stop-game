@@ -1,3 +1,4 @@
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const playerHandDiv = document.getElementById('player-hand');
@@ -367,6 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function playTurn(player, cardId) {
+        if (player === 'ai') await sleep(1000);
         try {
             if (currentPlayer !== player) return;
 
@@ -421,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
 
     async function finishTurn(player, turnCaptures, justPlayedOnFloor, playedMonth = null) {
+        if (player === 'ai') await sleep(1500); // A slightly longer delay for the second part
         const mainCaptured = player === 'player' ? playerCaptured : aiCaptured;
         let capturedInTurn = turnCaptures.length > 0;
 
