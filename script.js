@@ -70,8 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
     CARDS.push({ id: 39, month: 10, type: TYPES.PI, name: '10월 (피)', image: 'Hanafuda_October_Kasu_1_Alt.svg.png' });
     CARDS.push({ id: 40, month: 10, type: TYPES.PI, name: '10월 (피)', image: 'Hanafuda_October_Kasu_2_Alt.svg.png' });
     CARDS.push({ id: 41, month: 11, type: TYPES.GWANG, name: '11월 (광)', image: 'Hanafuda_November_Hikari_Alt.svg.png' });
-    CARDS.push({ id: 42, month: 11, type: TYPES.PI, name: '11월 (피)', image: 'Hanafuda_November_Tanzaku_Alt.svg.png' });
-    CARDS.push({ id: 43, month: 11, type: TYPES.PI, name: '11월 (피)', image: 'Hanafuda_November_Tane_Alt.svg.png' });
+    CARDS.push({ id: 42, month: 11, type: TYPES.TTI, name: '11월 (띠)', image: 'Hanafuda_November_Tanzaku_Alt.svg.png' });
+    CARDS.push({ id: 43, month: 11, type: TYPES.YEOL, name: '11월 (끗)', image: 'Hanafuda_November_Tane_Alt.svg.png' });
     CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (쌍피)', isDoublePi: true, image: 'Hanafuda_November_Kasu_Alt.svg.png' });
     CARDS.push({ id: 45, month: 12, type: TYPES.GWANG, name: '12월 (비광)', isBiGwang: true, image: 'Hanafuda_December_Hikari_Alt.svg.png' });
     CARDS.push({ id: 46, month: 12, type: TYPES.YEOL, name: '12월 (끗)', isDoublePi: true, image: 'Hanafuda_December_Kasu_1_Alt.svg.png' });
