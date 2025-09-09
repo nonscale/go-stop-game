@@ -170,35 +170,45 @@ button:disabled {
 }
 
 #popup-modal.welcome-popup {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    color: #333;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: linear-gradient(45deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
+    color: #5c2828;
+    border: 2px solid #fff;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 255, 255, 0.5) inset;
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.7);
 }
 
 #popup-modal.welcome-popup #popup-title {
-    color: #1a2a6c;
-    font-size: 24px;
+    font-family: serif;
+    color: #8a2323;
+    font-size: 28px;
+    font-weight: bold;
 }
 
 #popup-modal.welcome-popup p {
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 18px;
+    line-height: 1.7;
+    white-space: pre-line; /* Respects \n for line breaks */
 }
 
 #popup-modal.welcome-popup #popup-buttons button {
-    background-color: #1a2a6c;
+    background: linear-gradient(to right, #6a3093, #a044ff);
     color: white;
     border: none;
-    border-radius: 20px;
-    padding: 12px 30px;
-    transition: background-color 0.3s ease;
-    font-size: 18px;
+    border-radius: 25px;
+    padding: 15px 35px;
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px 0 rgba(116, 79, 168, 0.75);
+    transition: all 0.3s ease;
 }
 
 #popup-modal.welcome-popup #popup-buttons button:hover {
-    background-color: #b21f1f;
+    background: linear-gradient(to right, #a044ff, #6a3093);
+    box-shadow: 0 8px 25px 0 rgba(116, 79, 168, 0.75);
+    transform: translateY(-2px);
 }
 
 
