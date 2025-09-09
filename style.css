@@ -438,3 +438,16 @@ button:disabled {
         flex-direction: column;
     }
 }
+
+#ai-staging-area {
+    min-height: 80px;
+    background-color: #d8e8d8;
+    border: 2px dashed #6a8a6a;
+    margin-top: 10px;
+}
+
+.highlight {
+    border: 3px solid #ffc107 !important;
+    box-shadow: 0 0 10px #ffc107;
+    transform: scale(1.05);
+}
