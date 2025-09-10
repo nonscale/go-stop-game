@@ -356,9 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
 ${scoreDetail}`;
 
             if (messageLines.length > 0) {
-                message += `
-` + messageLines.join('
-');
+                message += "\n" + messageLines.join('\n');
             }
 
             if (winner === 'player') {
