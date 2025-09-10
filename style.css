@@ -274,25 +274,31 @@ button:disabled {
 
     #game-board {
         width: 100%;
-        height: 100vh;
+        height: 100vh; /* Use full viewport height */
         margin: 0;
-        padding: 3px;
-        gap: 3px;
+        padding: 2px;
+        gap: 2px;
         box-sizing: border-box;
         justify-content: space-between;
     }
 
     #ai-area, #player-area {
         flex-basis: 0;
-        flex-grow: 1;
         display: flex;
         flex-direction: column;
-        padding: 2px;
+        padding: 1px;
+    }
+    
+    #ai-area {
+        flex-grow: 0.8; /* AI area slightly smaller */
+    }
+    #player-area {
+        flex-grow: 1; /* Player area takes more space */
     }
 
     #floor-area {
         flex-direction: column;
-        gap: 5px;
+        gap: 2px;
     }
 
     #info-area {
@@ -302,62 +308,64 @@ button:disabled {
     }
     
     .player-info {
-        margin: 2px 5px;
-        font-size: 12px;
+        margin: 1px 5px;
+        font-size: 11px;
     }
 
     .player-info.player-info-main {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     .hand, .floor {
-        gap: 3px;
-        min-height: 75px;
+        gap: 2px;
+        /* min-height is removed to allow flexbox to manage height */
+        flex-grow: 1;
     }
 
     .card {
-        width: 48px;
-        height: 72px;
+        width: 45px; /* Slightly smaller cards */
+        height: 67.5px;
     }
 
     #ai-hand.hand {
-        min-height: 38px;
+        /* min-height is removed */
     }
 
     #ai-hand.hand .card {
-        width: 24px;
-        height: 36px;
-    }
-    
-    .captured-card {
         width: 22px;
         height: 33px;
     }
+    
+    .captured-card {
+        width: 20px;
+        height: 30px;
+    }
 
     .captured-area {
-        min-height: 60px;
+        /* min-height is removed */
+        flex-grow: 1;
     }
 
     .section {
         min-width: 0;
-        padding: 2px;
+        padding: 1px;
     }
 
     .section h5 {
-        font-size: 10px;
+        font-size: 9px;
     }
 
     .captured-cards {
-        min-height: 40px;
+       /* min-height is removed */
     }
 
     .player-name {
-        font-size: 16px;
-        padding: 5px;
+        font-size: 14px;
+        padding: 3px;
     }
 
     #ai-staging-area {
-        min-height: 75px;
+        /* min-height is removed */
     }
 }
 
