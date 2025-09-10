@@ -257,15 +257,25 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
 
         // Nagari (misdeal) check for 4 cards of the same month
-        const monthCounts = [...playerHand, ...aiHand, ...floor].reduce((acc, card) => {
-            acc[card.month] = (acc[card.month] || 0) + 1;
-            return acc;
-        }, {});
+        const checkForFourOfAMonth = (cardArray) => {
+            const counts = cardArray.reduce((acc, card) => {
+                acc[card.month] = (acc[card.month] || 0) + 1;
+                return acc;
+            }, {});
+            return Object.values(counts).some(count => count >= 4);
+        };
 
-        const isMisdeal = Object.values(monthCounts).some(count => count === 4);
+        const playerHas4 = checkForFourOfAMonth(playerHand);
+        const aiHas4 = checkForFourOfAMonth(aiHand);
+        const floorHas4 = checkForFourOfAMonth(floor);
 
-        if (isMisdeal) {
-            await showNotificationPopup("재시작 (나가리)", "같은 월의 패 4장이 한꺼번에 깔려 판을 다시 시작합니다.");
+        if (playerHas4 || aiHas4 || floorHas4) {
+            let reason = "";
+            if (playerHas4) reason = "플레이어의 패에 같은 월의 패가 4장 있습니다.";
+            else if (aiHas4) reason = "AI의 패에 같은 월의 패가 4장 있습니다.";
+            else if (floorHas4) reason = "바닥에 같은 월의 패가 4장 깔렸습니다.";
+            
+            await showNotificationPopup("재시작 (나가리)", `${reason} 판을 다시 시작합니다.`);
             startGame(startingPlayer);
             return;
         }
@@ -299,46 +309,57 @@ document.addEventListener('DOMContentLoaded', () => {
             const winnerScoreInfo = calculateScore(winnerCaptured);
             const loserScoreInfo = calculateScore(loserCaptured);
             
-            let finalScore = winnerScoreInfo.score;
-            message = `${winnerName}님이 ${finalScore}점으로 승리!`;
-
+            let scoreBeforeMultiplier = winnerScoreInfo.score;
+            let messageLines = [];
             let multiplier = 1;
 
-            // Go Bonus
-            if (winnerGoCount === 1) finalScore += 1;
-            if (winnerGoCount === 2) finalScore += 2;
-            if (winnerGoCount >= 3) multiplier *= (2 ** (winnerGoCount - 2));
-            
-            // Go-bak
+            // Add Go bonus points before calculating multipliers
+            if (winnerGoCount === 1) scoreBeforeMultiplier += 1;
+            if (winnerGoCount === 2) scoreBeforeMultiplier += 2;
+
+            // Calculate all multipliers
+            if (winnerGoCount >= 3) {
+                const goMultiplier = (2 ** (winnerGoCount - 2));
+                multiplier *= goMultiplier;
+                messageLines.push(`- ${winnerGoCount}고! x${goMultiplier}`);
+            }
             if (loserGoCount >= 1) {
                 multiplier *= 2;
-                message += `\n- 고박! x2`;
+                messageLines.push(`- 고박! x2`);
             }
-
-            // Shake bonus
             if (winnerShake) {
                 multiplier *= 2;
-                message += `\n- 흔들기 x2`;
+                messageLines.push(`- 흔들기! x2`);
             }
-
-            // Gwang-bak
             const gwangBak = winnerScoreInfo.gwangCount >= 3 && loserScoreInfo.gwangCount === 0;
             if (gwangBak) {
                 multiplier *= 2;
-                message += `\n- 광박! x2`;
+                messageLines.push(`- 광박! x2`);
             }
-
-            // Pi-bak
             const piBak = winnerScoreInfo.piCount >= 10 && loserScoreInfo.piCount < 5;
             if (piBak) {
                 multiplier *= 2;
-                message += `\n- 피박! x2`;
+                messageLines.push(`- 피박! x2`);
             }
 
-            // Apply multiplier
-            finalScore *= multiplier;
+            // Final score calculation
+            const finalScore = scoreBeforeMultiplier * multiplier;
+            const finalWinnings = finalScore * 100;
 
-            let finalWinnings = finalScore * 100;
+            // Build detailed message
+            message = `${winnerName}님이 ${finalScore}점으로 승리!`;
+            let scoreDetail = `(기본: ${winnerScoreInfo.score}점`;
+            if (winnerGoCount === 1) scoreDetail += `, 1고: +1점`;
+            if (winnerGoCount === 2) scoreDetail += `, 2고: +2점`;
+            scoreDetail += `)`;
+            message += `
+${scoreDetail}`;
+
+            if (messageLines.length > 0) {
+                message += `
+` + messageLines.join('
+');
+            }
 
             if (winner === 'player') {
                 playerMoney += finalWinnings;
@@ -355,7 +376,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             saveMoney();
             render();
-            message += `\n\n총 획득 금액: ${finalWinnings}원`;
+            message += `
+
+총 획득 금액: ${finalWinnings}원`;
         }
 
         await showPopup("라운드 종료", message, [{ text: '다음 판', value: 'next'}]);
@@ -512,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await stealPi(player);
         }
 
-        if (floor.length === 0 && capturedInTurn) {
+        if (floor.length === 0 && capturedInTurn && deck.length > 0) {
              const playerName = '김여사';
              await showNotificationPopup("싹쓸이!", `${playerName}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
              await stealPi(player);
@@ -706,7 +729,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await stealPi('ai');
         }
 
-        if (floor.length === 0 && capturedInTurn) {
+        if (floor.length === 0 && capturedInTurn && deck.length > 0) {
              await showNotificationPopup("싹쓸이!", `서울할머니님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
              await stealPi('ai');
         }
