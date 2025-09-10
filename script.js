@@ -70,13 +70,13 @@ document.addEventListener('DOMContentLoaded', () => {
     CARDS.push({ id: 38, month: 10, type: TYPES.TTI, name: '10월 (청단)', image: 'Hanafuda_October_Tanzaku_Alt.svg.png' });
     CARDS.push({ id: 39, month: 10, type: TYPES.PI, name: '10월 (피)', image: 'Hanafuda_October_Kasu_1_Alt.svg.png' });
     CARDS.push({ id: 40, month: 10, type: TYPES.PI, name: '10월 (피)', image: 'Hanafuda_October_Kasu_2_Alt.svg.png' });
-    CARDS.push({ id: 41, month: 11, type: TYPES.GWANG, name: '11월 (비광)', isBiGwang: true, image: 'Hanafuda_November_Hikari_Alt.svg.png' });
+    CARDS.push({ id: 41, month: 11, type: TYPES.GWANG, name: '11월 (오동광)', image: 'Hanafuda_November_Hikari_Alt.svg.png' });
     CARDS.push({ id: 42, month: 11, type: TYPES.TTI, name: '11월 (띠)', image: 'Hanafuda_November_Tanzaku_Alt.svg.png' });
-    CARDS.push({ id: 43, month: 11, type: TYPES.YEOL, name: '11월 (끗)', image: 'Hanafuda_November_Tane_Alt.svg.png' });
+    CARDS.push({ id: 43, month: 11, type: TYPES.PI, name: '11월 (피)', image: 'Hanafuda_November_Tane_Alt.svg.png' }); // NOTE: Data is PI, but image is for Tane(YEOL).
     CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (피)', image: 'Hanafuda_November_Kasu_Alt.svg.png' });
-    CARDS.push({ id: 45, month: 12, type: TYPES.GWANG, name: '12월 (광)', image: 'Hanafuda_December_Hikari_Alt.svg.png' });
-    CARDS.push({ id: 46, month: 12, type: TYPES.PI, name: '12월 (피)', image: 'Hanafuda_December_Kasu_1_Alt.svg.png' });
-    CARDS.push({ id: 47, month: 12, type: TYPES.PI, name: '12월 (쌍피)', isDoublePi: true, image: 'Hanafuda_December_Kasu_2_Alt.svg.png' });
+    CARDS.push({ id: 45, month: 12, type: TYPES.GWANG, name: '12월 (비광)', isBiGwang: true, image: 'Hanafuda_December_Hikari_Alt.svg.png' });
+    CARDS.push({ id: 46, month: 12, type: TYPES.TTI, name: '12월 (띠)', image: 'Hanafuda_December_Kasu_1_Alt.svg.png' }); // NOTE: Data is TTI, but image is for Kasu(PI). Missing Tanzaku image.
+    CARDS.push({ id: 47, month: 12, type: TYPES.YEOL, name: '12월 (끗)', isDoublePi: true, image: 'Hanafuda_December_Kasu_2_Alt.svg.png' }); // NOTE: Data is YEOL, but image is for Kasu(PI).
     CARDS.push({ id: 48, month: 12, type: TYPES.PI, name: '12월 (피)', image: 'Hanafuda_December_Kasu_3_Alt.svg.png' });
 
     // --- Game State ---
@@ -383,10 +383,18 @@ ${scoreDetail}`;
         await showPopup("라운드 종료", message, [{ text: '다음 판', value: 'next'}]);
 
         // Check for bankruptcy and reset if needed
-        if (playerMoney <= 0 || aiMoney <= 0) {
-            const bankruptPlayer = playerMoney <= 0 ? '김여사' : '서울할머니';
-            await showPopup("게임 종료", `${bankruptPlayer}님이 파산했습니다! 새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
-            localStorage.clear(); // Clear all game data on bankruptcy
+        if (playerMoney <= 0) {
+            const message = "게임머니를 다 잃으셨군요..ㅠㅠ\n\n서울할머니 나빠!!\n\n실망하지 마세요 5만원을 다시 지원해 드리릴께요~~\\n\n화이팅!!";
+            await showPopup("파산!", message, [{ text: '다시 시작', value: 'restart'}]);
+            playerMoney = 50000;
+            aiMoney = 50000;
+            saveMoney();
+            loadGameData(); // To update UI from new saved values
+        } else if (aiMoney <= 0) {
+            await showPopup("게임 종료", `서울할머니가 파산했습니다! 새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
+            playerMoney = 50000;
+            aiMoney = 50000;
+            saveMoney();
             loadGameData();
         }
         
