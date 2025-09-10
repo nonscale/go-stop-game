@@ -168,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         aiMoneySpan.textContent = aiMoney;
         playerScoreSpan.textContent = calculateScore(playerCaptured).score;
         aiScoreSpan.textContent = calculateScore(aiCaptured).score;
+        document.getElementById('deck-count').textContent = deck.length;
     }
 
     function hidePopup() {
@@ -487,11 +488,41 @@ ${scoreDetail}`;
         const mainCaptured = playerCaptured;
         let capturedInTurn = turnCaptures.length > 0;
 
-        const drawnCard = deck.pop();
-        if (!drawnCard) {
+        if (deck.length === 0) {
             await endRound('draw');
             return;
         }
+
+        const drawnCard = deck.pop();
+        render(); // Update deck count immediately
+
+        // Animate the flip
+        const cardDiv = createCardDiv(drawnCard);
+        cardDiv.style.position = 'absolute';
+        const deckAreaRect = document.getElementById('deck-area').getBoundingClientRect();
+        const gameBoardRect = document.getElementById('game-board').getBoundingClientRect();
+        cardDiv.style.left = `${deckAreaRect.left - gameBoardRect.left}px`;
+        cardDiv.style.top = `${deckAreaRect.top - gameBoardRect.top}px`;
+        document.getElementById('game-board').appendChild(cardDiv);
+        
+        await sleep(100); // allow card to be added to DOM
+        cardDiv.style.transition = 'transform 0.6s';
+        cardDiv.style.transform = 'rotateY(180deg)';
+        
+        await sleep(300); // Mid-flip, switch image
+        cardDiv.innerHTML = createCardDiv(drawnCard).innerHTML;
+        await sleep(300); // Wait for flip to complete
+
+        // Highlight the flipped card and its matches
+        cardDiv.classList.add('highlight');
+        const matches = floor.filter(c => c.month === drawnCard.month);
+        matches.forEach(match => {
+            const floorCardDiv = floorDiv.querySelector(`[data-card-id="${match.id}"]`);
+            if(floorCardDiv) floorCardDiv.classList.add('highlight-green');
+        });
+        await sleep(2000); // Let player see the match
+
+        document.getElementById('game-board').removeChild(cardDiv); // Remove animated card
 
         const isTadak = playedMonth !== null && playedMonth === drawnCard.month && floor.some(c => c.month === drawnCard.month);
 
@@ -507,7 +538,6 @@ ${scoreDetail}`;
             }
         }
 
-        const matches = floor.filter(c => c.month === drawnCard.month);
         if (matches.length === 0) {
             floor.push(drawnCard);
         } else if (matches.length === 1) {
@@ -649,78 +679,106 @@ ${scoreDetail}`;
     }
 
     async function aiPlayTurn(playedCard) {
-        let turnCaptures = [];
-        let justPlayedOnFloor = null;
-        let playedMonth = null;
-        let capturedInTurn = false;
+        aiStaging = []; // Ensure staging is clear at the start
+        const ANIMATION_DELAY = 2000; // Adjusted for better pacing
 
         // --- PART 1: Play card from hand ---
         aiHand.splice(aiHand.findIndex(c => c.id === playedCard.id), 1);
-        
+        aiStaging.push(playedCard);
+        render();
+        await sleep(ANIMATION_DELAY);
+
+        let handCardCaptures = [];
         const ppukIndex = ppukStacks.indexOf(playedCard.month);
         if (ppukIndex > -1) {
             await showNotificationPopup("뻑!", `서울할머니님이 ${playedCard.month}월 뻑을 해결했습니다!`);
             ppukStacks.splice(ppukIndex, 1);
             const ppukCards = floor.filter(c => c.month === playedCard.month);
             floor = floor.filter(c => c.month !== playedCard.month);
-            aiStaging.push(playedCard, ...ppukCards);
+            handCardCaptures.push(...ppukCards, playedCard);
             await stealPi('ai');
         } else {
             const matches = floor.filter(c => c.month === playedCard.month);
-            if (matches.length === 0) {
-                floor.push(playedCard);
-                justPlayedOnFloor = playedCard;
-            } else {
+            if (matches.length > 0) {
                 let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
+                const floorCardDiv = floorDiv.querySelector(`[data-card-id="${chosenCard.id}"]`);
+                if(floorCardDiv) floorCardDiv.classList.add('highlight-green');
+                await sleep(ANIMATION_DELAY);
+
                 floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
-                aiStaging.push(playedCard, chosenCard);
-                playedMonth = playedCard.month;
+                handCardCaptures.push(chosenCard, playedCard);
+                if(floorCardDiv) floorCardDiv.classList.remove('highlight-green');
+            } else {
+                // No match from hand, card goes to floor
+                floor.push(playedCard);
             }
         }
-
-        render();
-        await sleep(1500);
-        turnCaptures.push(...aiStaging);
-        aiStaging = [];
         
+        aiStaging = handCardCaptures; // Only captured cards go to staging
+        render();
+        await sleep(ANIMATION_DELAY);
+
         // --- PART 2: Draw card from deck ---
-        const drawnCard = deck.pop();
-        if (!drawnCard) {
-            aiCaptured.push(...turnCaptures);
+        if (deck.length === 0) {
+            aiCaptured.push(...handCardCaptures);
+            aiStaging = [];
             render();
             await endRound('draw');
             return;
         }
 
-        capturedInTurn = turnCaptures.length > 0;
-        const isTadak = playedMonth !== null && playedMonth === drawnCard.month && floor.some(c => c.month === drawnCard.month);
+        const drawnCard = deck.pop();
+        render();
 
-        if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) {
+        const cardDiv = createCardDiv(null);
+        cardDiv.style.position = 'absolute';
+        const deckAreaRect = document.getElementById('deck-area').getBoundingClientRect();
+        const gameBoardRect = document.getElementById('game-board').getBoundingClientRect();
+        cardDiv.style.left = `${deckAreaRect.left - gameBoardRect.left}px`;
+        cardDiv.style.top = `${deckAreaRect.top - gameBoardRect.top}px`;
+        document.getElementById('game-board').appendChild(cardDiv);
+        await sleep(100);
+        cardDiv.style.transition = 'transform 0.6s';
+        cardDiv.style.transform = 'rotateY(180deg)';
+        await sleep(300);
+        cardDiv.innerHTML = createCardDiv(drawnCard).innerHTML;
+        await sleep(300);
+
+        cardDiv.classList.add('highlight');
+        const drawnCardMatches = floor.filter(c => c.month === drawnCard.month);
+        drawnCardMatches.forEach(match => {
+            const floorCardDiv = floorDiv.querySelector(`[data-card-id="${match.id}"]`);
+            if(floorCardDiv) floorCardDiv.classList.add('highlight-green');
+        });
+        await sleep(ANIMATION_DELAY);
+        document.getElementById('game-board').removeChild(cardDiv);
+
+        // --- PART 3: Process captures and end turn ---
+        let drawnCardCaptures = [];
+        const playedMonth = playedCard.month;
+        const isTadak = playedMonth !== null && playedMonth === drawnCard.month && floor.some(c => c.month === drawnCard.month);
+        const justPlayedOnFloor = handCardCaptures.length === 0 && ppukIndex === -1;
+
+        if (justPlayedOnFloor && drawnCard.month === playedCard.month) {
             await showNotificationPopup('쪽!', `서울할머니님, 쪽! 축하합니다!`);
             await stealPi('ai');
-            const idx = floor.findIndex(c => c.id === justPlayedOnFloor.id);
+            const idx = floor.findIndex(c => c.id === playedCard.id);
             if (idx > -1) {
-                const cardFromFloor = floor.splice(idx, 1)[0];
-                aiStaging.push(cardFromFloor, drawnCard);
-                capturedInTurn = true;
+                drawnCardCaptures.push(floor.splice(idx, 1)[0], drawnCard);
             }
+        } else if (drawnCardMatches.length > 0) {
+            let chosenCard = (drawnCardMatches.length > 1) ? chooseBestCard(drawnCardMatches) : drawnCardMatches[0];
+            floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
+            drawnCardCaptures.push(chosenCard, drawnCard);
         } else {
-            const matches = floor.filter(c => c.month === drawnCard.month);
-            if (matches.length === 0) {
-                floor.push(drawnCard);
-            } else {
-                let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
-                floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
-                aiStaging.push(drawnCard, chosenCard);
-                capturedInTurn = true;
-            }
+            floor.push(drawnCard); // No match, place on floor
         }
 
-        render();
-        await sleep(1500);
-        turnCaptures.push(...aiStaging);
+        const allCapturedThisTurn = [...handCardCaptures, ...drawnCardCaptures];
+        aiCaptured.push(...allCapturedThisTurn);
         aiStaging = [];
-        aiCaptured.push(...turnCaptures);
+        
+        const capturedInTurn = allCapturedThisTurn.length > 0;
 
         if (isTadak) {
             await showNotificationPopup("따닥!", `서울할머니님의 따닥! 상대방의 피를 한 장 가져옵니다.`);
