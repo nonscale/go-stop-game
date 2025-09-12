@@ -196,7 +196,7 @@ body {
 
 button {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 1.2em;
     margin: 5px;
     cursor: pointer;
 }
@@ -226,7 +226,13 @@ button:disabled {
     text-align: center;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     min-width: 250px;
-    max-width: 400px;
+    max-width: 600px;
+}
+
+#popup-message {
+    font-size: 1.8em;
+    line-height: 1.6;
+    white-space: pre-line;
 }
 
 #popup-modal.welcome-popup {
@@ -274,6 +280,7 @@ button:disabled {
 
 #popup-modal h3 {
     margin-top: 0;
+    font-size: 2em;
 }
 
 #popup-buttons {

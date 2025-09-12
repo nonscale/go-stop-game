@@ -597,7 +597,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 floor.splice(floor.findIndex(c => c.id === bestCard.id), 1);
                 turnCaptures.push(drawnCard, bestCard);
                 capturedInTurn = true;
-                await showNotificationPopup("자동 선택", `바닥에 같은 월의 카드가 여러 장 있어, 가장 좋은 패(${bestCard.name})를 자동으로 획득합니다.`);
+                await showNotificationPopup("자동 선택", `바닥에 같은 월의 카드가 여러 장 있어,
+가장 좋은 패(${bestCard.name})를 자동으로 획득합니다.`);
             }
         }
 
@@ -627,7 +628,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (ppukMonths.length > 0) {
             const playerName = '김여사';
-            await showNotificationPopup("뻑!", `${playerName}님의 턴에 뻑! - ${ppukMonths.join(', ')}월 카드가 바닥에 3장이 되었습니다!`);
+            await showNotificationPopup("뻑!", `${playerName}님의 턴에 뻑! - 
+${ppukMonths.join(', ')}월 카드가 바닥에 3장이 되었습니다!`);
         }
 
         render();
@@ -705,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (canBomb) {
             const choice = await showPopup(
                 '폭탄!', 
-                `${bombMonth}월 카드 3장을 가지고 있고, 바닥에 1장이 있습니다. 폭탄으로 내시겠습니까?`,
+                `${bombMonth}월 카드 3장을 가지고 있고, 바닥에 1장이 있습니다.\n폭탄으로 내시겠습니까?`,
                 [
                     { text: '예 (폭탄)', value: 'bomb' },
                     { text: '아니오', value: 'no' }
@@ -721,7 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // If bomb was not chosen, or not available, offer to shake.
         if (canShake && !playerShake && !hasBeenOfferedShake) {
             hasBeenOfferedShake = true; // Ask only once per round
-            const choice = await showPopup('흔들기!', '패에 같은 월의 카드가 3장 있습니다. 흔드시겠습니까?',
+            const choice = await showPopup('흔들기!', '패에 같은 월의 카드가 3장 있습니다.\n흔드시겠습니까?',
                 [
                     { text: '예', value: 'yes' },
                     { text: '아니오', value: 'no' }
@@ -793,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const monthToShake = specialMove.month;
                 aiShakenCards = aiHand.filter(c => c.month === monthToShake);
                 aiHand = aiHand.filter(c => c.month !== monthToShake);
-                await showNotificationPopup("흔들기!", "서울할머니가 흔들었습니다! 흔든 패를 확인하세요.");
+                await showNotificationPopup("흔들기!", "서울할머니가 흔들었습니다!\n흔든 패를 확인하세요.");
                 render(); // Re-render to show shaken cards
             }
 
