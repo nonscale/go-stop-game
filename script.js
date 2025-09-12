@@ -1,5 +1,11 @@
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 document.addEventListener('DOMContentLoaded', () => {
+    // Move deck to the floor area for better layout
+    const deckArea = document.getElementById('deck-area');
+    const floorArea = document.getElementById('floor-area');
+    if (deckArea && floorArea) {
+        floorArea.appendChild(deckArea);
+    }
     // --- DOM Elements ---
     const playerHandDiv = document.getElementById('player-hand');
     const aiHandDiv = document.getElementById('ai-hand');
@@ -13,8 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentPlayer !== 'player' || isGoStopTurn) return;
         const cardDiv = e.target.closest('.card');
         if (cardDiv && cardDiv.dataset.cardId) {
-            const cardId = parseInt(cardDiv.dataset.cardId, 10);
-            playTurn('player', cardId);
+            const cardId = cardDiv.dataset.cardId; // Keep it as a string
+            // Try to parse, if it's a number, it's a normal card. If not, it's a dummy.
+            const cardIdNum = parseInt(cardId, 10);
+            playTurn('player', isNaN(cardIdNum) ? cardId : cardIdNum);
         }
     });
 
@@ -70,20 +78,23 @@ document.addEventListener('DOMContentLoaded', () => {
     CARDS.push({ id: 38, month: 10, type: TYPES.TTI, name: '10월 (청단)', image: 'Hanafuda_October_Tanzaku_Alt.svg.png' });
     CARDS.push({ id: 39, month: 10, type: TYPES.PI, name: '10월 (피)', image: 'Hanafuda_October_Kasu_1_Alt.svg.png' });
     CARDS.push({ id: 40, month: 10, type: TYPES.PI, name: '10월 (피)', image: 'Hanafuda_October_Kasu_2_Alt.svg.png' });
-    CARDS.push({ id: 41, month: 11, type: TYPES.GWANG, name: '11월 (오동광)', image: 'Hanafuda_November_Hikari_Alt.svg.png' });
+    CARDS.push({ id: 41, month: 11, type: TYPES.GWANG, name: '11월 (비광)', isBiGwang: true, image: 'Hanafuda_November_Hikari_Alt.svg.png' });
     CARDS.push({ id: 42, month: 11, type: TYPES.TTI, name: '11월 (띠)', image: 'Hanafuda_November_Tanzaku_Alt.svg.png' });
-    CARDS.push({ id: 43, month: 11, type: TYPES.PI, name: '11월 (피)', image: 'Hanafuda_November_Tane_Alt.svg.png' }); // NOTE: Data is PI, but image is for Tane(YEOL).
-    CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (피)', image: 'Hanafuda_November_Kasu_Alt.svg.png' });
-    CARDS.push({ id: 45, month: 12, type: TYPES.GWANG, name: '12월 (비광)', isBiGwang: true, image: 'Hanafuda_December_Hikari_Alt.svg.png' });
-    CARDS.push({ id: 46, month: 12, type: TYPES.TTI, name: '12월 (띠)', image: 'Hanafuda_December_Kasu_1_Alt.svg.png' }); // NOTE: Data is TTI, but image is for Kasu(PI). Missing Tanzaku image.
-    CARDS.push({ id: 47, month: 12, type: TYPES.YEOL, name: '12월 (끗)', isDoublePi: true, image: 'Hanafuda_December_Kasu_2_Alt.svg.png' }); // NOTE: Data is YEOL, but image is for Kasu(PI).
+    CARDS.push({ id: 43, month: 11, type: TYPES.YEOL, name: '11월 (끗)', image: 'Hanafuda_November_Tane_Alt.svg.png' });
+    CARDS.push({ id: 44, month: 11, type: TYPES.PI, name: '11월 (쌍피)', isDoublePi: true, image: 'Hanafuda_November_Kasu_Alt.svg.png' });
+    CARDS.push({ id: 45, month: 12, type: TYPES.GWANG, name: '12월 (광)', image: 'Hanafuda_December_Hikari_Alt.svg.png' });
+    CARDS.push({ id: 46, month: 12, type: TYPES.PI, name: '12월 (피)', image: 'Hanafuda_December_Kasu_1_Alt.svg.png' });
+    CARDS.push({ id: 47, month: 12, type: TYPES.PI, name: '12월 (쌍피)', isDoublePi: true, image: 'Hanafuda_December_Kasu_2_Alt.svg.png' });
     CARDS.push({ id: 48, month: 12, type: TYPES.PI, name: '12월 (피)', image: 'Hanafuda_December_Kasu_3_Alt.svg.png' });
 
+    // 스크립트 로드 시 원본 덱을 한번 섞어 초기 정렬 상태를 완전히 제거합니다.
+    shuffleDeck(CARDS);
+
     // --- Game State ---
-    let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer, aiStaging;
+    let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer, aiShakenCards;
     let playerMoney, aiMoney;
     let ppukStacks = [], playerShake = false, aiShake = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
-    let isGoStopTurn = false;
+    let isGoStopTurn = false, canBomb = false, bombMonth = -1;
 
     function loadGameData() {
         playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
@@ -115,15 +126,52 @@ document.addEventListener('DOMContentLoaded', () => {
         playerHandDiv.innerHTML = '';
         aiHandDiv.innerHTML = '';
         floorDiv.innerHTML = '';
-        document.getElementById('ai-staging-area').innerHTML = ''; // Clear staging area
+        
 
         playerHand.sort((a, b) => a.month - b.month);
         playerHand.forEach(card => playerHandDiv.appendChild(createCardDiv(card)));
-        aiHand.forEach(() => { aiHandDiv.appendChild(createCardDiv(null)); });
-        floor.forEach(card => floorDiv.appendChild(createCardDiv(card)));
-        if (aiStaging) { // Render staging area
-            aiStaging.forEach(card => document.getElementById('ai-staging-area').appendChild(createCardDiv(card)));
-        }
+
+        // AI 손 패 렌더링 (흔든 패는 앞면, 나머지는 뒷면)
+        aiShakenCards.forEach(card => {
+            const cardDiv = createCardDiv(card);
+            cardDiv.classList.add('shaken');
+            aiHandDiv.appendChild(cardDiv);
+        });
+        aiHand.forEach(() => { 
+            const cardDiv = createCardDiv(null);
+            cardDiv.classList.add('ai-card-back');
+            aiHandDiv.appendChild(cardDiv); 
+        });
+
+                const ppeokMonths = [...ppukStacks];
+        const normalFloorCards = floor.filter(card => !ppeokMonths.includes(card.month));
+        
+        // Render normal cards
+        normalFloorCards.sort((a,b) => a.month - b.month).forEach(card => { // Sort normal cards too for consistency
+            floorDiv.appendChild(createCardDiv(card));
+        });
+
+        // Render ppeok stacks
+        ppeokMonths.forEach(month => {
+            const ppeokCards = floor.filter(card => card.month === month);
+            if (ppeokCards.length > 0) {
+                const stackContainer = document.createElement('div');
+                stackContainer.classList.add('ppeok-stack');
+                
+                ppeokCards.sort((a, b) => a.id - b.id);
+
+                ppeokCards.forEach((card, index) => {
+                    const cardDiv = createCardDiv(card);
+                    cardDiv.classList.remove('card'); // Prevent hover/cursor effects
+                    cardDiv.classList.add('ppeok-stack-card'); // Add a specific class for styling
+                    cardDiv.classList.add('ppeok-card'); // Keep the red border
+                    cardDiv.style.left = `${index * 25}px`;
+                    stackContainer.appendChild(cardDiv);
+                });
+                floorDiv.appendChild(stackContainer);
+            }
+        });
+        
 
         const renderCaptured = (playerPrefix, capturedCards) => {
             const gwangDiv = document.getElementById(`${playerPrefix}-gwang`);
@@ -162,13 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById(`${playerPrefix}-tti-count`).textContent = ttiCount;
             document.getElementById(`${playerPrefix}-pi-count`).textContent = piCount;
         };
+
         renderCaptured('player', playerCaptured);
         renderCaptured('ai', aiCaptured);
         playerMoneySpan.textContent = playerMoney;
         aiMoneySpan.textContent = aiMoney;
         playerScoreSpan.textContent = calculateScore(playerCaptured).score;
         aiScoreSpan.textContent = calculateScore(aiCaptured).score;
-        document.getElementById('deck-count').textContent = deck.length;
     }
 
     function hidePopup() {
@@ -228,26 +276,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function shuffleDeck(array) {
-        let currentIndex = array.length,  randomIndex;
-
-        // While there remain elements to shuffle.
-        while (currentIndex > 0) {
-
-            // Pick a remaining element.
-            randomIndex = Math.floor(Math.random() * currentIndex);
-            currentIndex--;
-
-            // And swap it with the current element.
-            [array[currentIndex], array[randomIndex]] = [
-                array[randomIndex], array[currentIndex]];
-        }
-
-        return array;
+        // 더 강력한 셔플을 위해 sort와 Math.random을 이용합니다.
+        return array.sort(() => Math.random() - 0.5);
     }
 
     async function startGame(startingPlayer = 'player') {
-        deck = shuffleDeck([...CARDS]); // Using new shuffle algorithm
-        playerHand = []; aiHand = []; floor = []; playerCaptured = []; aiCaptured = []; aiStaging = [];
+        // 덱을 여러 번 섞어 무작위성을 높입니다. (같은 월 패 뭉침 현상 개선)
+        deck = [...CARDS]; // 매번 새로운 덱으로 시작
+        for (let i = 0; i < 5; i++) { // 셔플 횟수를 5회로 늘려 무작위성 강화
+            shuffleDeck(deck);
+        }
+
+        playerHand = []; aiHand = []; floor = []; playerCaptured = []; aiCaptured = []; aiShakenCards = [];
         ppukStacks = []; 
         playerShake = false; aiShake = false; 
         playerGoCount = 0; aiGoCount = 0;
@@ -257,26 +297,30 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPlayer = startingPlayer;
         render();
 
-        // Nagari (misdeal) check for 4 cards of the same month
-        const checkForFourOfAMonth = (cardArray) => {
-            const counts = cardArray.reduce((acc, card) => {
-                acc[card.month] = (acc[card.month] || 0) + 1;
-                return acc;
-            }, {});
-            return Object.values(counts).some(count => count >= 4);
-        };
+        // Check for initial Ppeok on the floor
+        const initialFloorCounts = floor.reduce((acc, card) => {
+            acc[card.month] = (acc[card.month] || 0) + 1;
+            return acc;
+        }, {});
+        const initialPpukMonths = [];
+        for (const month in initialFloorCounts) {
+            if (initialFloorCounts[month] === 3) {
+                console.log(`[DEBUG] Initial Ppeok detected for month: ${month}`);
+                initialPpukMonths.push(month);
+                ppukStacks.push(parseInt(month));
+            }
+        }
+        if (initialPpukMonths.length > 0) {
+            await showNotificationPopup("초기 뻑!", `게임 시작 시 바닥에 ${initialPpukMonths.join(', ')}월 뻑이 있습니다!`);
+        }
 
-        const playerHas4 = checkForFourOfAMonth(playerHand);
-        const aiHas4 = checkForFourOfAMonth(aiHand);
-        const floorHas4 = checkForFourOfAMonth(floor);
+                // Nagari (misdeal) check for 4 cards of the same month in one hand
+        const playerHandCounts = playerHand.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
+        const aiHandCounts = aiHand.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
+        const isMisdeal = Object.values(playerHandCounts).some(count => count === 4) || Object.values(aiHandCounts).some(count => count === 4);
 
-        if (playerHas4 || aiHas4 || floorHas4) {
-            let reason = "";
-            if (playerHas4) reason = "플레이어의 패에 같은 월의 패가 4장 있습니다.";
-            else if (aiHas4) reason = "AI의 패에 같은 월의 패가 4장 있습니다.";
-            else if (floorHas4) reason = "바닥에 같은 월의 패가 4장 깔렸습니다.";
-            
-            await showNotificationPopup("재시작 (나가리)", `${reason} 판을 다시 시작합니다.`);
+        if (isMisdeal) {
+            await showNotificationPopup("재시작 (나가리)", "같은 월의 패 4장이 한꺼번에 깔려 판을 다시 시작합니다.");
             startGame(startingPlayer);
             return;
         }
@@ -310,55 +354,51 @@ document.addEventListener('DOMContentLoaded', () => {
             const winnerScoreInfo = calculateScore(winnerCaptured);
             const loserScoreInfo = calculateScore(loserCaptured);
             
-            let scoreBeforeMultiplier = winnerScoreInfo.score;
-            let messageLines = [];
+            const baseScore = winnerScoreInfo.score;
+            let messageLines = [`${winnerName}님이 승리하셨습니다!`, '---'];
+            let scoreLog = [`기본 점수: ${baseScore}점`];
             let multiplier = 1;
+            let goBonus = 0;
 
-            // Add Go bonus points before calculating multipliers
-            if (winnerGoCount === 1) scoreBeforeMultiplier += 1;
-            if (winnerGoCount === 2) scoreBeforeMultiplier += 2;
-
-            // Calculate all multipliers
+            // Go Bonus Points (calculated separately)
+            if (winnerGoCount === 1) goBonus = 1;
+            if (winnerGoCount === 2) goBonus = 2;
+            // Go Multiplier for 3+
             if (winnerGoCount >= 3) {
-                const goMultiplier = (2 ** (winnerGoCount - 2));
+                let goMultiplier = (2 ** (winnerGoCount - 2));
                 multiplier *= goMultiplier;
-                messageLines.push(`- ${winnerGoCount}고! x${goMultiplier}`);
+                scoreLog.push(`${winnerGoCount}고: x${goMultiplier}배`);
             }
+            
+            // Go-bak
             if (loserGoCount >= 1) {
                 multiplier *= 2;
-                messageLines.push(`- 고박! x2`);
+                scoreLog.push(`고박: x2배`);
             }
+
+            // Shake bonus
             if (winnerShake) {
                 multiplier *= 2;
-                messageLines.push(`- 흔들기! x2`);
+                scoreLog.push(`흔들기/폭탄: x2배`);
             }
+
+            // Gwang-bak
             const gwangBak = winnerScoreInfo.gwangCount >= 3 && loserScoreInfo.gwangCount === 0;
             if (gwangBak) {
                 multiplier *= 2;
-                messageLines.push(`- 광박! x2`);
+                scoreLog.push(`광박: x2배`);
             }
+
+            // Pi-bak
             const piBak = winnerScoreInfo.piCount >= 10 && loserScoreInfo.piCount < 5;
             if (piBak) {
                 multiplier *= 2;
-                messageLines.push(`- 피박! x2`);
+                scoreLog.push(`피박: x2배`);
             }
 
-            // Final score calculation
-            const finalScore = scoreBeforeMultiplier * multiplier;
+            const multipliedScore = baseScore * multiplier;
+            const finalScore = multipliedScore + goBonus;
             const finalWinnings = finalScore * 100;
-
-            // Build detailed message
-            message = `${winnerName}님이 ${finalScore}점으로 승리!`;
-            let scoreDetail = `(기본: ${winnerScoreInfo.score}점`;
-            if (winnerGoCount === 1) scoreDetail += `, 1고: +1점`;
-            if (winnerGoCount === 2) scoreDetail += `, 2고: +2점`;
-            scoreDetail += `)`;
-            message += `
-${scoreDetail}`;
-
-            if (messageLines.length > 0) {
-                message += "\n" + messageLines.join('\n');
-            }
 
             if (winner === 'player') {
                 playerMoney += finalWinnings;
@@ -375,26 +415,26 @@ ${scoreDetail}`;
             
             saveMoney();
             render();
-            message += `
 
-총 획득 금액: ${finalWinnings}원`;
+            messageLines.push(...scoreLog);
+            if (goBonus > 0) messageLines.push(`고 보너스: +${goBonus}점`);
+            messageLines.push('---');
+            if (multiplier > 1) {
+                 messageLines.push(`점수 계산: (${baseScore}점 x ${multiplier}배) + ${goBonus}점`);
+            }
+            messageLines.push(`최종 점수: ${finalScore}점`);
+            messageLines.push(`획득 금액: ${finalWinnings.toLocaleString()}원`);
+
+            message = messageLines.join('\n');
         }
 
         await showPopup("라운드 종료", message, [{ text: '다음 판', value: 'next'}]);
 
         // Check for bankruptcy and reset if needed
-        if (playerMoney <= 0) {
-            const message = "게임머니를 다 잃으셨군요..ㅠㅠ\n\n서울할머니 나빠!!\n\n실망하지 마세요 5만원을 다시 지원해 드리릴께요~~\\n\n화이팅!!";
-            await showPopup("파산!", message, [{ text: '다시 시작', value: 'restart'}]);
-            playerMoney = 50000;
-            aiMoney = 50000;
-            saveMoney();
-            loadGameData(); // To update UI from new saved values
-        } else if (aiMoney <= 0) {
-            await showPopup("게임 종료", `서울할머니가 파산했습니다! 새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
-            playerMoney = 50000;
-            aiMoney = 50000;
-            saveMoney();
+        if (playerMoney <= 0 || aiMoney <= 0) {
+            const bankruptPlayer = playerMoney <= 0 ? '김여사' : '서울할머니';
+            await showPopup("게임 종료", `${bankruptPlayer}님이 파산했습니다!\n새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
+            localStorage.clear(); // Clear all game data on bankruptcy
             loadGameData();
         }
         
@@ -405,7 +445,7 @@ ${scoreDetail}`;
         return cards.sort((a, b) => TYPE_VALUES[b.type] - TYPE_VALUES[a.type])[0];
     }
 
-    function stealPi(player) {
+        function stealPi(player) {
         const opponent = player === 'player' ? 'ai' : 'player';
         const opponentCaptured = opponent === 'player' ? playerCaptured : aiCaptured;
         const playerCapturedPile = player === 'player' ? playerCaptured : aiCaptured;
@@ -428,7 +468,7 @@ ${scoreDetail}`;
             stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI);
         }
 
-        if (stolenCardIndex > -1) {
+                if (stolenCardIndex > -1) {
             const stolenCard = opponentCaptured.splice(stolenCardIndex, 1)[0];
             playerCapturedPile.push(stolenCard);
             render();
@@ -444,24 +484,40 @@ ${scoreDetail}`;
         try {
             if (currentPlayer !== player) return;
 
-            const hand = playerHand; // Always player's hand
-            const playedCard = hand.find(c => c.id === cardId);
-            if (!playedCard) return;
+            const hand = playerHand;
+            const cardIndex = hand.findIndex(c => c.id === cardId);
+            if (cardIndex === -1) return;
+            
+            const playedCard = hand[cardIndex];
 
-            hand.splice(hand.findIndex(c => c.id === cardId), 1);
+            // Handle Dummy Card play
+            if (playedCard.type === 'dummy') {
+                hand.splice(cardIndex, 1); // Remove this dummy card from hand
+                await showNotificationPopup("공패 사용", "공패를 사용하여 턴을 넘깁니다.");
+                // A dummy card is just discarded. It doesn't go to the floor.
+                // Proceed to drawing from the deck.
+                await finishTurn(player, [], null, null);
+                return;
+            }
+
+            // --- Original logic for normal cards ---
+            hand.splice(cardIndex, 1);
             let turnCaptures = [];
             let justPlayedOnFloor = null;
 
             const ppukIndex = ppukStacks.indexOf(playedCard.month);
             if (ppukIndex > -1) {
+                console.log(`[DEBUG] Ppeok resolved for month: ${playedCard.month}. Attempting to steal pi.`);
                 const playerName = '김여사';
                 await showNotificationPopup("뻑!", `${playerName}님이 ${playedCard.month}월 뻑을 해결했습니다!`);
                 ppukStacks.splice(ppukIndex, 1);
                 const ppukCards = floor.filter(c => c.month === playedCard.month);
                 floor = floor.filter(c => c.month !== playedCard.month);
-                turnCaptures.push(playedCard, ...ppukCards);
+                
+                playerCaptured.push(playedCard, ...ppukCards);
                 await stealPi(player);
-                await finishTurn(player, turnCaptures, null);
+                
+                await finishTurn(player, [], null);
                 return;
             }
 
@@ -496,69 +552,53 @@ ${scoreDetail}`;
         const mainCaptured = playerCaptured;
         let capturedInTurn = turnCaptures.length > 0;
 
-        if (deck.length === 0) {
+        const drawnCard = deck.pop();
+        if (!drawnCard) {
             await endRound('draw');
             return;
         }
 
-        const drawnCard = deck.pop();
-        render(); // Update deck count immediately
-
-        // Animate the flip
-        const cardDiv = createCardDiv(drawnCard);
-        cardDiv.style.position = 'absolute';
-        const deckAreaRect = document.getElementById('deck-area').getBoundingClientRect();
-        const gameBoardRect = document.getElementById('game-board').getBoundingClientRect();
-        cardDiv.style.left = `${deckAreaRect.left - gameBoardRect.left}px`;
-        cardDiv.style.top = `${deckAreaRect.top - gameBoardRect.top}px`;
-        document.getElementById('game-board').appendChild(cardDiv);
-        
-        await sleep(100); // allow card to be added to DOM
-        cardDiv.style.transition = 'transform 0.6s';
-        cardDiv.style.transform = 'rotateY(180deg)';
-        
-        await sleep(300); // Mid-flip, switch image
-        cardDiv.innerHTML = createCardDiv(drawnCard).innerHTML;
-        await sleep(300); // Wait for flip to complete
-
-        // Highlight the flipped card and its matches
-        cardDiv.classList.add('highlight');
-        const matches = floor.filter(c => c.month === drawnCard.month);
-        matches.forEach(match => {
-            const floorCardDiv = floorDiv.querySelector(`[data-card-id="${match.id}"]`);
-            if(floorCardDiv) floorCardDiv.classList.add('highlight-green');
-        });
-        await sleep(2000); // Let player see the match
-
-        document.getElementById('game-board').removeChild(cardDiv); // Remove animated card
-
+        const playerName = '김여사';
         const isTadak = playedMonth !== null && playedMonth === drawnCard.month && floor.some(c => c.month === drawnCard.month);
 
-        if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) {
-            const playerName = '김여사';
+        // Check for Ppeok capture from the deck
+        const ppukIndex = ppukStacks.indexOf(drawnCard.month);
+        if (ppukIndex > -1) {
+            await showNotificationPopup("뻑!", `${playerName}님이 ${drawnCard.month}월 뻑을 뒤집어서 해결했습니다!`);
+            ppukStacks.splice(ppukIndex, 1);
+            const ppukCards = floor.filter(c => c.month === drawnCard.month);
+            floor = floor.filter(c => c.month !== drawnCard.month);
+            
+            turnCaptures.push(drawnCard, ...ppukCards);
+            capturedInTurn = true;
+            await stealPi(player);
+        } else if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) {
+            // This is Jjok
             await showNotificationPopup('쪽!', `${playerName}님, 쪽! 축하합니다!`);
             await stealPi(player);
             const idx = floor.findIndex(c => c.id === justPlayedOnFloor.id);
             if (idx > -1) {
                 const card = floor.splice(idx, 1)[0];
-                turnCaptures.push(card);
+                turnCaptures.push(card, drawnCard); // Correctly take both cards
                 capturedInTurn = true;
             }
-        }
-
-        if (matches.length === 0) {
-            floor.push(drawnCard);
-        } else if (matches.length === 1) {
-            const match = matches[0];
-            floor.splice(floor.findIndex(c => c.id === match.id), 1);
-            turnCaptures.push(drawnCard, match);
-            capturedInTurn = true;
-        } else { // matches.length > 1
-            const bestCard = chooseBestCard(matches);
-            floor.splice(floor.findIndex(c => c.id === bestCard.id), 1);
-            turnCaptures.push(drawnCard, bestCard);
-            capturedInTurn = true;
-            await showNotificationPopup("자동 선택", `바닥에 같은 월의 카드가 여러 장 있어, 가장 좋은 패(${bestCard.name})를 자동으로 획득합니다.`);
+        } else {
+            // Normal match
+            const matches = floor.filter(c => c.month === drawnCard.month);
+            if (matches.length === 0) {
+                floor.push(drawnCard);
+            } else if (matches.length === 1) {
+                const match = matches[0];
+                floor.splice(floor.findIndex(c => c.id === match.id), 1);
+                turnCaptures.push(drawnCard, match);
+                capturedInTurn = true;
+            } else { // matches.length > 1
+                const bestCard = chooseBestCard(matches);
+                floor.splice(floor.findIndex(c => c.id === bestCard.id), 1);
+                turnCaptures.push(drawnCard, bestCard);
+                capturedInTurn = true;
+                await showNotificationPopup("자동 선택", `바닥에 같은 월의 카드가 여러 장 있어, 가장 좋은 패(${bestCard.name})를 자동으로 획득합니다.`);
+            }
         }
 
         if (turnCaptures.length > 0) {
@@ -571,13 +611,13 @@ ${scoreDetail}`;
             await stealPi(player);
         }
 
-        if (floor.length === 0 && capturedInTurn && deck.length > 0) {
+        if (floor.length === 0 && capturedInTurn && deck.length > 0) { // 마지막 턴 싹쓸이 보너스 방지
              const playerName = '김여사';
              await showNotificationPopup("싹쓸이!", `${playerName}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
              await stealPi(player);
         }
 
-        const counts = floor.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
+                const counts = floor.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
         const ppukMonths = [];
         for (const m in counts) {
             if (counts[m] === 3 && !ppukStacks.includes(parseInt(m))) {
@@ -603,6 +643,21 @@ ${scoreDetail}`;
             playerHandDiv.style.pointerEvents = 'none';
             setTimeout(aiTurn, 1000);
         } else {
+            // It's player's turn. Check if they have cards.
+            if (playerHand.length === 0) {
+                // Player has no cards, round ends. Calculate winner.
+                const playerScore = calculateScore(playerCaptured).score;
+                const aiScore = calculateScore(aiCaptured).score;
+                if (playerScore > aiScore) {
+                    await endRound('player');
+                } else if (aiScore > playerScore) {
+                    await endRound('ai');
+                } else {
+                    await endRound('draw');
+                }
+                return; // Stop further turn processing
+            }
+
             playerHandDiv.style.pointerEvents = 'auto';
             try {
                 await handleSpecialActions();
@@ -613,10 +668,57 @@ ${scoreDetail}`;
         }
     }
 
+    async function playBomb(month) {
+        // Find and move cards
+        const bombCardsFromHand = playerHand.filter(c => c.month === month);
+        const cardFromFloor = floor.find(c => c.month === month);
+
+        // Add to captured
+        playerCaptured.push(...bombCardsFromHand, cardFromFloor);
+
+        // Remove from hand and floor
+        playerHand = playerHand.filter(c => c.month !== month);
+        floor = floor.filter(c => c.month !== month);
+
+        await showNotificationPopup("폭탄!", `${month}월 폭탄! 상대방의 피를 한 장 가져옵니다.`);
+        
+        // Steal pi
+        await stealPi('player');
+
+        // A bomb is a type of shake, so set the shake bonus
+        playerShake = true; 
+
+        // Add two dummy cards to player's hand
+        const dummyCard1 = { id: `dummy_${Date.now()}_1`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
+        const dummyCard2 = { id: `dummy_${Date.now()}_2`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
+        playerHand.push(dummyCard1, dummyCard2);
+
+        // The bomb replaces playing a card from hand. Continue to the deck draw part of the turn.
+        await finishTurn('player', [], null, month); 
+    }
+
     async function handleSpecialActions() {
         if (isGoStopTurn) return;
         checkForSpecials();
 
+        // Offer Bomb first, as it's a more specific action
+        if (canBomb) {
+            const choice = await showPopup(
+                '폭탄!', 
+                `${bombMonth}월 카드 3장을 가지고 있고, 바닥에 1장이 있습니다. 폭탄으로 내시겠습니까?`,
+                [
+                    { text: '예 (폭탄)', value: 'bomb' },
+                    { text: '아니오', value: 'no' }
+                ]
+            );
+
+            if (choice === 'bomb') {
+                await playBomb(bombMonth);
+                return; // Bomb action is the "play from hand" part of the turn.
+            }
+        }
+
+        // If bomb was not chosen, or not available, offer to shake.
         if (canShake && !playerShake && !hasBeenOfferedShake) {
             hasBeenOfferedShake = true; // Ask only once per round
             const choice = await showPopup('흔들기!', '패에 같은 월의 카드가 3장 있습니다. 흔드시겠습니까?',
@@ -634,7 +736,11 @@ ${scoreDetail}`;
     async function handleGoStopPopup() {
         isGoStopTurn = true;
 
-        const choice = await showPopup('고 또는 스톱', `현재 점수는 ${calculateScore(playerCaptured).score}점 입니다. '고' 하시겠습니까?`, 
+        const playerScore = calculateScore(playerCaptured).score;
+        const aiScore = calculateScore(aiCaptured).score;
+        const message = `현재 점수: ${playerScore}점 (상대: ${aiScore}점)\n'고' 하시겠습니까?`;
+
+        const choice = await showPopup('고 또는 스톱', message, 
             [
                 { text: '고', value: 'go' },
                 { text: '스톱', value: 'stop' }
@@ -654,11 +760,24 @@ ${scoreDetail}`;
     function checkForSpecials() {
         const hand = playerHand;
         const handCounts = hand.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
+        
         canShake = false;
+        canBomb = false;
+        bombMonth = -1;
+
         for (const month in handCounts) {
             if (handCounts[month] >= 3) {
                 canShake = true;
-                break; // Found a shake, no need to check further
+                // Check for bomb condition: 3 cards in hand, 1 on floor
+                const floorHasMatch = floor.some(c => c.month === parseInt(month));
+                if (handCounts[month] === 3 && floorHasMatch) {
+                    const floorCount = floor.filter(c => c.month === parseInt(month)).length;
+                    if (floorCount === 1) {
+                        canBomb = true;
+                        bombMonth = parseInt(month);
+                        break; // Found a bomb, which is the most specific special, so we can stop.
+                    }
+                }
             }
         }
     }
@@ -671,14 +790,27 @@ ${scoreDetail}`;
             const specialMove = getAISpecialMove();
             if (specialMove.action === 'shake') {
                 aiShake = true;
-                await showNotificationPopup("흔들기!", "서울할머니가 흔들었습니다! 이번 판은 점수 2배!");
+                const monthToShake = specialMove.month;
+                aiShakenCards = aiHand.filter(c => c.month === monthToShake);
+                aiHand = aiHand.filter(c => c.month !== monthToShake);
+                await showNotificationPopup("흔들기!", "서울할머니가 흔들었습니다! 흔든 패를 확인하세요.");
+                render(); // Re-render to show shaken cards
             }
 
             const cardToPlay = getAIBestMove();
             if (cardToPlay) {
                 await aiPlayTurn(cardToPlay);
             } else {
-                await endRound('draw');
+                // AI has no cards, round ends. Calculate winner.
+                const playerScore = calculateScore(playerCaptured).score;
+                const aiScore = calculateScore(aiCaptured).score;
+                if (playerScore > aiScore) {
+                    await endRound('player');
+                } else if (aiScore > playerScore) {
+                    await endRound('ai');
+                } else {
+                    await endRound('draw');
+                }
             }
         } catch (e) {
             console.error("Error during aiTurn:", e);
@@ -687,106 +819,128 @@ ${scoreDetail}`;
     }
 
     async function aiPlayTurn(playedCard) {
-        aiStaging = []; // Ensure staging is clear at the start
-        const ANIMATION_DELAY = 2000; // Adjusted for better pacing
+        // Helper to find a card div on the floor
+        const findFloorCardDiv = (card) => Array.from(floorDiv.children).find(d => d.dataset.cardId == card.id);
 
         // --- PART 1: Play card from hand ---
         aiHand.splice(aiHand.findIndex(c => c.id === playedCard.id), 1);
-        aiStaging.push(playedCard);
-        render();
-        await sleep(ANIMATION_DELAY);
+        render(); // Show card removed from AI hand
+        await sleep(500);
 
-        let handCardCaptures = [];
+        let turnCaptures = [];
+        let justPlayedOnFloor = null;
+        let playedMonth = null;
+        let capturedInTurn = false;
+
+        // Ppeok logic
         const ppukIndex = ppukStacks.indexOf(playedCard.month);
         if (ppukIndex > -1) {
             await showNotificationPopup("뻑!", `서울할머니님이 ${playedCard.month}월 뻑을 해결했습니다!`);
-            ppukStacks.splice(ppukIndex, 1);
             const ppukCards = floor.filter(c => c.month === playedCard.month);
+            
+            // Highlight
+            const divsToHighlight = ppukCards.map(findFloorCardDiv).filter(d => d); // Filter out nulls
+            divsToHighlight.forEach(d => d.classList.add('highlight-ai-move'));
+            await sleep(1500);
+
+            // Capture
+            ppukStacks.splice(ppukIndex, 1);
             floor = floor.filter(c => c.month !== playedCard.month);
-            handCardCaptures.push(...ppukCards, playedCard);
+            aiCaptured.push(playedCard, ...ppukCards);
             await stealPi('ai');
+            capturedInTurn = true;
         } else {
             const matches = floor.filter(c => c.month === playedCard.month);
-            if (matches.length > 0) {
-                let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
-                const floorCardDiv = floorDiv.querySelector(`[data-card-id="${chosenCard.id}"]`);
-                if(floorCardDiv) floorCardDiv.classList.add('highlight-green');
-                await sleep(ANIMATION_DELAY);
-
-                floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
-                handCardCaptures.push(chosenCard, playedCard);
-                if(floorCardDiv) floorCardDiv.classList.remove('highlight-green');
-            } else {
-                // No match from hand, card goes to floor
+            if (matches.length === 0) {
                 floor.push(playedCard);
+                justPlayedOnFloor = playedCard;
+            } else {
+                let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
+                playedMonth = playedCard.month;
+
+                // Highlight
+                const chosenCardDiv = findFloorCardDiv(chosenCard);
+                if (chosenCardDiv) chosenCardDiv.classList.add('highlight-ai-move');
+                
+                const tempPlayedCardDiv = createCardDiv(playedCard);
+                tempPlayedCardDiv.classList.add('highlight-ai-move');
+                floorDiv.appendChild(tempPlayedCardDiv);
+                await sleep(1500);
+                floorDiv.removeChild(tempPlayedCardDiv);
+
+                // Capture
+                floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
+                turnCaptures.push(playedCard, chosenCard);
+                capturedInTurn = true;
             }
         }
         
-        aiStaging = handCardCaptures; // Only captured cards go to staging
         render();
-        await sleep(ANIMATION_DELAY);
+        await sleep(1000);
 
         // --- PART 2: Draw card from deck ---
-        if (deck.length === 0) {
-            aiCaptured.push(...handCardCaptures);
-            aiStaging = [];
+        const deckDiv = document.querySelector('#deck-area .card');
+        if(deckDiv) deckDiv.classList.add('highlight-ai-move');
+        await sleep(500);
+        
+        const drawnCard = deck.pop();
+        if(deckDiv) deckDiv.classList.remove('highlight-ai-move');
+
+        if (!drawnCard) {
+            aiCaptured.push(...turnCaptures);
             render();
             await endRound('draw');
             return;
         }
 
-        const drawnCard = deck.pop();
-        render();
-
-        const cardDiv = createCardDiv(null);
-        cardDiv.style.position = 'absolute';
-        const deckAreaRect = document.getElementById('deck-area').getBoundingClientRect();
-        const gameBoardRect = document.getElementById('game-board').getBoundingClientRect();
-        cardDiv.style.left = `${deckAreaRect.left - gameBoardRect.left}px`;
-        cardDiv.style.top = `${deckAreaRect.top - gameBoardRect.top}px`;
-        document.getElementById('game-board').appendChild(cardDiv);
-        await sleep(100);
-        cardDiv.style.transition = 'transform 0.6s';
-        cardDiv.style.transform = 'rotateY(180deg)';
-        await sleep(300);
-        cardDiv.innerHTML = createCardDiv(drawnCard).innerHTML;
-        await sleep(300);
-
-        cardDiv.classList.add('highlight');
-        const drawnCardMatches = floor.filter(c => c.month === drawnCard.month);
-        drawnCardMatches.forEach(match => {
-            const floorCardDiv = floorDiv.querySelector(`[data-card-id="${match.id}"]`);
-            if(floorCardDiv) floorCardDiv.classList.add('highlight-green');
-        });
-        await sleep(ANIMATION_DELAY);
-        document.getElementById('game-board').removeChild(cardDiv);
-
-        // --- PART 3: Process captures and end turn ---
-        let drawnCardCaptures = [];
-        const playedMonth = playedCard.month;
         const isTadak = playedMonth !== null && playedMonth === drawnCard.month && floor.some(c => c.month === drawnCard.month);
-        const justPlayedOnFloor = handCardCaptures.length === 0 && ppukIndex === -1;
 
-        if (justPlayedOnFloor && drawnCard.month === playedCard.month) {
-            await showNotificationPopup('쪽!', `서울할머니님, 쪽! 축하합니다!`);
+        const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
+        if (drawnPpukIndex > -1) {
+            await showNotificationPopup("뻑!", `서울할머니님이 ${drawnCard.month}월 뻑을 뒤집어서 해결했습니다!`);
+            const ppukCards = floor.filter(c => c.month === drawnCard.month);
+
+            const divsToHighlight = ppukCards.map(findFloorCardDiv).filter(d => d);
+            divsToHighlight.forEach(d => d.classList.add('highlight-ai-move'));
+            await sleep(1500);
+
+            ppukStacks.splice(drawnPpukIndex, 1);
+            floor = floor.filter(c => c.month !== drawnCard.month);
+            turnCaptures.push(drawnCard, ...ppukCards);
             await stealPi('ai');
-            const idx = floor.findIndex(c => c.id === playedCard.id);
+            capturedInTurn = true;
+
+        } else if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) { // Jjok
+            await showNotificationPopup('쪽!', `서울할머니님, 쪽! 축하합니다!`);
+            const cardOnFloorDiv = findFloorCardDiv(justPlayedOnFloor);
+            if(cardOnFloorDiv) cardOnFloorDiv.classList.add('highlight-ai-move');
+            await sleep(1500);
+
+            const idx = floor.findIndex(c => c.id === justPlayedOnFloor.id);
             if (idx > -1) {
-                drawnCardCaptures.push(floor.splice(idx, 1)[0], drawnCard);
+                const cardFromFloor = floor.splice(idx, 1)[0];
+                turnCaptures.push(cardFromFloor, drawnCard);
+                capturedInTurn = true;
             }
-        } else if (drawnCardMatches.length > 0) {
-            let chosenCard = (drawnCardMatches.length > 1) ? chooseBestCard(drawnCardMatches) : drawnCardMatches[0];
-            floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
-            drawnCardCaptures.push(chosenCard, drawnCard);
-        } else {
-            floor.push(drawnCard); // No match, place on floor
+            await stealPi('ai');
+        } else { // Normal match
+            const matches = floor.filter(c => c.month === drawnCard.month);
+            if (matches.length === 0) {
+                floor.push(drawnCard);
+            } else {
+                let chosenCard = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
+                
+                const chosenCardDiv = findFloorCardDiv(chosenCard);
+                if(chosenCardDiv) chosenCardDiv.classList.add('highlight-ai-move');
+                await sleep(1500);
+
+                floor.splice(floor.findIndex(c => c.id === chosenCard.id), 1);
+                turnCaptures.push(drawnCard, chosenCard);
+                capturedInTurn = true;
+            }
         }
 
-        const allCapturedThisTurn = [...handCardCaptures, ...drawnCardCaptures];
-        aiCaptured.push(...allCapturedThisTurn);
-        aiStaging = [];
-        
-        const capturedInTurn = allCapturedThisTurn.length > 0;
+        aiCaptured.push(...turnCaptures);
 
         if (isTadak) {
             await showNotificationPopup("따닥!", `서울할머니님의 따닥! 상대방의 피를 한 장 가져옵니다.`);
@@ -823,7 +977,7 @@ ${scoreDetail}`;
         if (!aiShake) {
             for (const month in handCounts) {
                 if (handCounts[month] >= 3) {
-                    return { action: 'shake' };
+                    return { action: 'shake', month: parseInt(month, 10) };
                 }
             }
         }
@@ -1003,18 +1157,6 @@ ${scoreDetail}`;
         if (piCount >= 10) score += piCount - 9;
 
         return { score, piCount, gwangCount: gwangs.length };
-    }
-
-    function checkForSpecials() {
-        const hand = playerHand;
-        const handCounts = hand.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
-        canShake = false;
-        for (const month in handCounts) {
-            if (handCounts[month] >= 3) {
-                canShake = true;
-                break; // Found a shake, no need to check further
-            }
-        }
     }
 
     // --- Start Game ---
