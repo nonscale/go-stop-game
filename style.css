@@ -16,6 +16,7 @@ body {
 }
 
 #game-board {
+    position: relative; /* For absolute positioning of animations */
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -176,21 +177,21 @@ body {
 }
 
 #info-area {
-    padding: 10px;
+    padding: 5px;
     border: 1px solid #ddd;
     border-radius: 5px;
     background-color: #f5f5f5;
-    text-align: center;
     flex-grow: 1;
 }
 
-.player-info {
-    margin: 5px 0;
-    font-size: 16px;
+.info-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.player-info.player-info-main {
-    font-size: 18px;
+.player-info-box {
+    font-size: 1.5em;
     font-weight: bold;
 }
 
@@ -328,7 +329,7 @@ button:disabled {
 }
 
 
-/* --- Responsive Design --- */
+/* --- Responsive Design */
 
 /* For Mobile Portrait */
 @media (max-width: 768px) and (orientation: portrait) {
@@ -550,6 +551,18 @@ button:disabled {
     transform: scale(1.05);
 }
 
+.highlight-player-move {
+    border: 3px solid #dc3545 !important; /* Red */
+    box-shadow: 0 0 10px #dc3545;
+    transform: scale(1.05);
+}
+
+.highlight-ai-move {
+    border: 3px solid #007bff !important;
+    box-shadow: 0 0 10px #007bff;
+    transform: scale(1.05);
+}
+
 #deck-area {
     display: flex;
     flex-direction: column;
@@ -574,7 +587,26 @@ button:disabled {
 }
 
 
-/* --- Card Back Color --- */
+/* --- Card Back Color */
 .card-back img, .ai-card-back img {
     filter: hue-rotate(180deg) saturate(0.6) brightness(0.6) sepia(0.2);
+}
+
+/* --- Animations */
+@keyframes fake-flip {
+    0% { transform: scaleX(1); }
+    50% { transform: scaleX(0); }
+    100% { transform: scaleX(1); }
+}
+
+.flipping {
+    animation: fake-flip 0.7s linear;
+}
+
+.player-info-box.ai-info {
+    color: #007bff; /* AI's blue highlight color */
+}
+
+.player-info-box.player-info {
+    color: #dc3545; /* Player's red highlight color */
 }
