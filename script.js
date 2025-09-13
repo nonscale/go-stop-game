@@ -1340,17 +1340,84 @@ document.addEventListener('DOMContentLoaded', () => {
         return { score, piCount, gwangCount: gwangs.length };
     }
 
+    function enterFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.mozRequestFullScreen) { /* Firefox */
+            elem.mozRequestFullScreen();
+        } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE/Edge */
+            elem.msRequestFullscreen();
+        }
+    }
+
+    // --- Window Control Buttons ---
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const exitGameBtn = document.getElementById('exit-game-btn');
+
+    function enterFullscreen() {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen();
+        } else if (elem.mozRequestFullScreen) { /* Firefox */
+            elem.mozRequestFullScreen();
+        } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari and Opera */
+            elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE/Edge */
+            elem.msRequestFullscreen();
+        }
+    }
+
+    function exitFullscreen() {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) { /* Firefox */
+            document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) { /* Chrome, Safari and Opera */
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) { /* IE/Edge */
+            document.msExitFullscreen();
+        }
+    }
+
+    fullscreenBtn.addEventListener('click', () => {
+        enterFullscreen();
+        fullscreenBtn.style.display = 'none'; // Hide after use
+    });
+
+    exitGameBtn.addEventListener('click', async () => {
+        const choice = await showPopup("게임 종료", "정말로 게임을 종료하시겠습니까?", [
+            { text: '예', value: 'yes' },
+            { text: '아니오', value: 'no' }
+        ]);
+
+        if (choice === 'yes') {
+            if (document.fullscreenElement) {
+                exitFullscreen();
+            }
+            // Navigate to a blank page to simulate closing the tab
+            window.location.href = 'about:blank';
+        }
+    });
+
+
     // --- Start Game ---
     (async () => {
         const welcomeShown = localStorage.getItem('goStopWelcomeShown');
         if (!welcomeShown) {
             popupModal.classList.add('welcome-popup');
 
-            await showPopup(
+            const choice = await showPopup(
                 "보건복지부에서 온 편지",
                 "안녕하세요 김여사님.\n\n열심히 산 당신께 5만원을 게임머니로 드렸습니다.\n저랑 게임해서 돈도 벌어서 손녀들에게 맛있는거 사주세요~",
                 [{ text: '준비되면 누르세요', value: 'start' }]
             );
+
+            if (choice === 'start') {
+                enterFullscreen();
+            }
 
             popupModal.classList.remove('welcome-popup');
             localStorage.setItem('goStopWelcomeShown', 'true');

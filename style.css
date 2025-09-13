@@ -195,6 +195,14 @@ body {
     font-weight: bold;
 }
 
+.player-info-box.ai-info {
+    color: #007bff; /* AI's blue highlight color */
+}
+
+.player-info-box.player-info {
+    color: #dc3545; /* Player's red highlight color */
+}
+
 button {
     padding: 10px 20px;
     font-size: 1.2em;
@@ -603,10 +611,23 @@ button:disabled {
     animation: fake-flip 0.7s linear;
 }
 
-.player-info-box.ai-info {
-    color: #007bff; /* AI's blue highlight color */
+#window-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1001; /* Higher than popup overlay */
 }
 
-.player-info-box.player-info {
-    color: #dc3545; /* Player's red highlight color */
+#window-controls button {
+    margin-left: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#window-controls button:hover {
+    background-color: white;
 }
