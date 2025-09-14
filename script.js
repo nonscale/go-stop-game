@@ -27,6 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    document.addEventListener('mousemove', () => {
+        // If it's player's turn and the game is not paused for Go/Stop decision
+        if (currentPlayer === 'player' && !isGoStopTurn) {
+            startInactivityTimer(); // Reset the timer on mouse move
+        }
+    });
+
     // Popup Elements
     const popupOverlay = document.getElementById('popup-overlay');
     const popupTitle = document.getElementById('popup-title');
@@ -95,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer;
     let playerMoney, aiMoney;
     let ppukStacks = [], playerShake = false, aiShake = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
-    let isGoStopTurn = false, canBomb = false, bombMonth = -1;
+    let isGoStopTurn = false, canBomb = false, bombMonth = -1, inactivityTimer = null;
 
     function loadGameData() {
         playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
@@ -395,6 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(aiTurn, 1000);
         } else {
             playerHandDiv.style.pointerEvents = 'auto';
+            startInactivityTimer();
             try {
                 await handleSpecialActions();
             } catch (e) {
@@ -405,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function endRound(winner) {
+        clearInactivityTimer();
         let message;
         if (winner === 'draw') {
             message = "이번 판은 무승부입니다!";
@@ -541,6 +550,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function playTurn(player, cardId) {
+        clearInactivityTimer();
         if (player === 'ai') {
             console.error("playTurn should not be called for AI anymore.");
             return;
@@ -742,6 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function switchTurn(fromPlayer) {
+        clearInactivityTimer();
         hideDiscardHint(); // Hide any existing hints before switching turns
         currentPlayer = fromPlayer === 'player' ? 'ai' : 'player';
         if (currentPlayer === 'ai') {
@@ -764,6 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             playerHandDiv.style.pointerEvents = 'auto';
+            startInactivityTimer();
             try {
                 await handleSpecialActions();
             } catch (e) {
@@ -803,6 +815,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Defer capture to finishTurn, passing the bomb cards as handCaptures
         await finishTurn('player', allBombCards, null, month, 1); 
+    }
+
+    // --- Inactivity Timer ---
+    function clearInactivityTimer() {
+        if (inactivityTimer) {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = null;
+        }
+    }
+
+    function startInactivityTimer() {
+        clearInactivityTimer(); // Always clear previous timer before starting a new one
+        if (currentPlayer !== 'player' || isGoStopTurn) return; // Only run for player's active turn
+
+        inactivityTimer = setTimeout(() => {
+            showToastPopup("차례 알림", "김여사님 차례입니다.", 3000);
+        }, 5000); // 5 seconds
     }
 
     // --- HINT SYSTEM ---
@@ -902,6 +931,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleGoStopPopup() {
         isGoStopTurn = true;
+        clearInactivityTimer();
 
         const playerScore = calculateScore(playerCaptured).score;
         const aiScore = calculateScore(aiCaptured).score;
