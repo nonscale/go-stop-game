@@ -699,3 +699,29 @@ button:disabled {
         transform: translateY(-5px);
     }
 }
+
+/* --- Turn Notification Bubble */
+.turn-notification-bubble {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 100, 200, 0.85);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 50px;
+    font-size: 26px;
+    font-weight: bold;
+    z-index: 30;
+    pointer-events: none;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+}

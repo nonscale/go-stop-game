@@ -402,7 +402,6 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(aiTurn, 1000);
         } else {
             playerHandDiv.style.pointerEvents = 'auto';
-            startInactivityTimer();
             try {
                 await handleSpecialActions();
             } catch (e) {
@@ -712,7 +711,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // For a new Ppeok, no cards are captured. They all stay on the floor.
             // The played card from hand is already on the floor.
             // The matched card from hand is still on the floor.
-            // The drawn card is on the floor.
             // The generic ppeok checker below will handle stack creation.
             turnCaptures = []; // Empty the captures for this turn
         } 
@@ -830,8 +828,29 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentPlayer !== 'player' || isGoStopTurn) return; // Only run for player's active turn
 
         inactivityTimer = setTimeout(() => {
-            showToastPopup("차례 알림", "김여사님 차례입니다.", 3000);
+            showTurnNotificationBubble();
         }, 5000); // 5 seconds
+    }
+
+    function showTurnNotificationBubble() {
+        // Remove any existing bubble first
+        const existingBubble = document.querySelector('.turn-notification-bubble');
+        if (existingBubble) {
+            existingBubble.remove();
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'turn-notification-bubble';
+        bubble.textContent = '김여사님 차례입니다.';
+
+        const playerArea = document.getElementById('player-area');
+        playerArea.appendChild(bubble);
+
+        setTimeout(() => {
+            if(bubble.parentElement) {
+                bubble.remove();
+            }
+        }, 2900); // Remove just before animation ends
     }
 
     // --- HINT SYSTEM ---
