@@ -1229,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         card.isShaken = true;
                     }
                 });
-                await showNotificationPopup("흔들기!", "서울할머니가 흔들었습니다!\n흔든 패를 확인하세요.");
+                await showToastPopup("흔들기!", "서울할머니가 흔들었습니다!\n흔든 패를 확인하세요.");
                 render();
             }
 
