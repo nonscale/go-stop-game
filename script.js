@@ -722,7 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Handle special events after capture (Sseul-sseu-ri)
         if (floor.length === 0 && capturedInTurn && deck.length > 0) {
-             await showNotificationPopup("싹쓸이!", `${playerName}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
+             await showToastPopup("싹쓸이!", `${playerName}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
              await stealPi(player);
         }
 
@@ -1061,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Post-Turn Events ---
         if (floor.length === 0 && allTurnCaptures.length > 0 && deck.length > 0) {
-            await showNotificationPopup("싹쓸이!", `서울할머니님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
+            await showToastPopup("싹쓸이!", `서울할머니님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
             await stealPi(player);
         }
 
@@ -1191,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Post-Turn Events ---
         if (floor.length === 0 && capturedInTurn && deck.length > 0) {
-            await showNotificationPopup("싹쓸이!", `서울할머니님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
+            await showToastPopup("싹쓸이!", `서울할머니님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
             await stealPi(player);
         }
 
