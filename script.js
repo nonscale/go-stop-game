@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentPlayer !== 'player' || isGoStopTurn) return;
         const cardDiv = e.target.closest('.card');
         if (cardDiv && cardDiv.dataset.cardId) {
+            hideDiscardHint(); // Hide hint on any card click
             const cardId = cardDiv.dataset.cardId; // Keep it as a string
             // Try to parse, if it's a number, it's a normal card. If not, it's a dummy.
             const cardIdNum = parseInt(cardId, 10);
@@ -258,6 +259,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function showNotificationPopup(title, message) {
         await showPopup(title, message, [{ text: '확인', value: 'ok' }]);
+    }
+
+    async function showToastPopup(title, message, duration = 3000) {
+        popupTitle.textContent = title;
+        popupMessage.textContent = message;
+        popupChoicesDiv.innerHTML = '';
+        popupChoicesDiv.style.display = 'none';
+    
+        const popupButtonsDiv = document.getElementById('popup-buttons');
+        popupButtonsDiv.innerHTML = ''; // No buttons
+    
+        popupOverlay.classList.remove('hidden');
+    
+        await sleep(duration); // Pause execution for the duration
+    
+        hidePopup(); // Hide after the pause
     }
 
     function showChoicePopup(playedCard, choices) {
@@ -566,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const ppukIndex = ppukStacks.indexOf(playedCard.month);
             if (ppukIndex > -1) {
                 const playerName = '김여사';
-                await showNotificationPopup("뻑!", `${playerName}님이 ${playedCard.month}월 뻑을 해결했습니다!`);
+                await showToastPopup("'싼 거' 먹기!", `${playerName}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
                 
                 const ppukCards = floor.filter(c => c.month === playedCard.month);
                 ppukCards.forEach(c => c.highlight = true);
@@ -662,13 +679,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!eventOccurred) {
             const ppukIndex = ppukStacks.indexOf(drawnCard.month);
             if (ppukIndex > -1) { // Resolve existing Ppeok
-                await showNotificationPopup("뻑!", `${playerName}님이 ${drawnCard.month}월 뻑을 뒤집어서 해결했습니다!`);
+                await showToastPopup("'싼 거' 먹기!", `${playerName}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
                 const ppukCards = floor.filter(c => c.month === drawnCard.month);
                 deckCaptures.push(...ppukCards);
                 ppukStacks.splice(ppukIndex, 1);
                 await stealPi(player);
             } else if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) { // Jjok
-                await showNotificationPopup('쪽!', `${playerName}님, 쪽! 축하합니다!`);
+                await showToastPopup('쪽!', `${playerName}님, 쪽! 축하합니다!`);
                 deckCaptures.push(justPlayedOnFloor, drawnCard);
                 await stealPi(player);
             } else { // Normal deck match
@@ -725,6 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function switchTurn(fromPlayer) {
+        hideDiscardHint(); // Hide any existing hints before switching turns
         currentPlayer = fromPlayer === 'player' ? 'ai' : 'player';
         if (currentPlayer === 'ai') {
             playerHandDiv.style.pointerEvents = 'none';
@@ -787,6 +805,76 @@ document.addEventListener('DOMContentLoaded', () => {
         await finishTurn('player', allBombCards, null, month, 1); 
     }
 
+    // --- HINT SYSTEM ---
+    function findBestDiscard() {
+        // 1. Check if any capture is possible. If so, no hint.
+        const canCapture = playerHand.some(handCard => floor.some(floorCard => floorCard.month === handCard.month));
+        if (canCapture) {
+            return null;
+        }
+
+        // 2. If no capture, find the safest card to discard.
+        // Strategy: Prioritize discarding cards that are least valuable and less likely to help the opponent.
+        let bestCard = null;
+        let bestDangerScore = Infinity;
+
+        for (const card of playerHand) {
+            let dangerScore = 100; // Base danger
+
+            // Lower danger for lower value cards
+            if (card.type === TYPES.PI) dangerScore -= 50;
+            if (card.type === TYPES.TTI) dangerScore -= 30;
+            if (card.type === TYPES.YEOL) dangerScore -= 10;
+            if (card.type === TYPES.GWANG) dangerScore += 50; // High danger
+
+            // Lower danger if opponent already has cards of this month (less likely to make a new yaku)
+            const opponentHasMonth = aiCaptured.some(c => c.month === card.month);
+            if (opponentHasMonth) {
+                dangerScore -= 20;
+            }
+
+            // Higher danger if this is the 3rd card of a month on the board (risk of ppeok)
+            const floorCount = floor.filter(c => c.month === card.month).length;
+            if (floorCount === 2) {
+                dangerScore += 40;
+            }
+
+            if (dangerScore < bestDangerScore) {
+                bestDangerScore = dangerScore;
+                bestCard = card;
+            }
+        }
+        return bestCard;
+    }
+
+    function showDiscardHint(cardId) {
+        hideDiscardHint(); // Remove any previous hint
+        const cardDiv = document.querySelector(`#player-hand .card[data-card-id="${cardId}"]`);
+        if (!cardDiv) return;
+
+        const hintContainer = document.createElement('div');
+        hintContainer.className = 'hint-container';
+        hintContainer.id = 'discard-hint';
+
+        const hintBubble = document.createElement('div');
+        hintBubble.className = 'hint-bubble';
+        hintBubble.textContent = '이 카드를 내는 게 좋겠어요!';
+
+        const hintArrow = document.createElement('div');
+        hintArrow.className = 'hint-arrow';
+
+        hintContainer.appendChild(hintBubble);
+        hintContainer.appendChild(hintArrow);
+        cardDiv.appendChild(hintContainer);
+    }
+
+    function hideDiscardHint() {
+        const existingHint = document.getElementById('discard-hint');
+        if (existingHint) {
+            existingHint.parentNode.removeChild(existingHint);
+        }
+    }
+
     async function handleSpecialActions() {
         if (isGoStopTurn) return;
         checkForSpecials(); // This sets canBomb and bombMonth for playTurn to use
@@ -803,6 +891,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (choice === 'yes') {
                 playerShake = true;
             }
+        }
+
+        // Show discard hint if applicable
+        const bestDiscard = findBestDiscard();
+        if (bestDiscard) {
+            showDiscardHint(bestDiscard.id);
         }
     }
 
@@ -823,7 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isGoStopTurn = false;
         if (choice === 'go') {
             playerGoCount++;
-            await showNotificationPopup("고!", '김여사님이 고!를 외쳤습니다.');
+            await showToastPopup("고!", '김여사님이 고!를 외쳤습니다.');
             switchTurn('player');
         } else {
             await endRound('player');
@@ -932,7 +1026,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!eventOccurred) {
             const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
             if (drawnPpukIndex > -1) {
-                await showNotificationPopup("뻑!", `서울할머니님이 ${drawnCard.month}월 뻑을 뒤집어서 해결했습니다!`);
+                await showToastPopup("'싼 거' 먹기!", `서울할머니님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
                 const ppukCards = floor.filter(c => c.month === drawnCard.month);
                 deckCaptures.push(...ppukCards);
                 ppukStacks.splice(drawnPpukIndex, 1);
@@ -1007,7 +1101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Ppeok-solving logic ---
         const ppukIndex = ppukStacks.indexOf(playedCard.month);
         if (ppukIndex > -1) {
-            await showNotificationPopup("뻑!", `서울할머니님이 ${playedCard.month}월 뻑을 해결했습니다!`);
+            await showToastPopup("'싼 거' 먹기!", `서울할머니님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
             const ppukCards = floor.filter(c => c.month === playedCard.month);
             handCaptures.push(...ppukCards);
             ppukStacks.splice(ppukIndex, 1);
@@ -1056,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!eventOccurred) {
             const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
             if (drawnPpukIndex > -1) { // Resolve existing Ppeok with drawn card
-                await showNotificationPopup("뻑!", `서울할머니님이 ${drawnCard.month}월 뻑을 뒤집어서 해결했습니다!`);
+                await showToastPopup("'싼 거' 먹기!", `서울할머니님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
                 const ppukCards = floor.filter(c => c.month === drawnCard.month);
                 deckCaptures.push(...ppukCards);
                 ppukStacks.splice(drawnPpukIndex, 1);
@@ -1064,7 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 const justPlayedOnFloor = floor.find(c => c.id === playedCard.id);
                 if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) { // Jjok
-                    await showNotificationPopup('쪽!', `서울할머니님, 쪽! 축하합니다!`);
+                    await showToastPopup('쪽!', `서울할머니님, 쪽! 축하합니다!`);
                     deckCaptures.push(justPlayedOnFloor, drawnCard);
                     await stealPi(player);
                 } else { // Normal deck match
