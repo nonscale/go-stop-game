@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Game State ---
     let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer;
     let playerMoney, aiMoney;
-    let ppukStacks = [], playerShake = false, aiShake = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
+    let ppukStacks = [], playerShake = false, aiShake = false, playerShakeActive = false, aiShakeActive = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
     let isGoStopTurn = false, canBomb = false, bombMonth = -1, inactivityTimer = null;
 
     function loadGameData() {
@@ -142,11 +142,27 @@ document.addEventListener('DOMContentLoaded', () => {
         floorDiv.innerHTML = '';
         
 
-        playerHand.sort((a, b) => a.month - b.month);
-        playerHand.forEach(card => playerHandDiv.appendChild(createCardDiv(card)));
+        playerHand.sort((a, b) => {
+            const aShaken = a.isShaken ? 1 : 0;
+            const bShaken = b.isShaken ? 1 : 0;
+            if (aShaken !== bShaken) return aShaken - bShaken;
+            return a.month - b.month;
+        });
+        playerHand.forEach(card => {
+            const cardDiv = createCardDiv(card);
+            if (card.isShaken) {
+                cardDiv.classList.add('shaken');
+            }
+            playerHandDiv.appendChild(cardDiv);
+        });
 
         // AI 손 패 렌더링 (흔든 패는 앞면, 나머지는 뒷면)
-        aiHand.sort((a, b) => a.month - b.month).forEach(card => {
+        aiHand.sort((a, b) => {
+            const aShaken = a.isShaken ? 1 : 0;
+            const bShaken = b.isShaken ? 1 : 0;
+            if (aShaken !== bShaken) return aShaken - bShaken;
+            return a.month - b.month;
+        }).forEach(card => {
             // isShaken 속성이 있으면 앞면(shaken 클래스 포함), 없으면 뒷면
             const cardDiv = card.isShaken ? createCardDiv(card) : createCardDiv(null);
             if (card.isShaken) {
@@ -362,6 +378,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerHand = []; aiHand = []; floor = []; playerCaptured = []; aiCaptured = [];
         ppukStacks = []; 
         playerShake = false; aiShake = false; 
+        playerShakeActive = false; aiShakeActive = false;
         playerGoCount = 0; aiGoCount = 0;
         canShake = false; isGoStopTurn = false; hasBeenOfferedShake = false;
         for (let i = 0; i < 10; i++) { playerHand.push(deck.pop()); aiHand.push(deck.pop()); }
@@ -549,6 +566,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function playTurn(player, cardId) {
+        if (playerShakeActive) {
+            const shakenCardsInHand = playerHand.filter(c => c.isShaken);
+            if (shakenCardsInHand.length > 0) {
+                const shakenMonth = shakenCardsInHand[0].month;
+                const playedCard = playerHand.find(c => c.id === cardId);
+                if (playedCard && playedCard.month === shakenMonth) {
+                    playerShakeActive = false;
+                    hideShakeBubbles(); // Hide the bubble immediately
+                }
+            }
+        }
+
         clearInactivityTimer();
         if (player === 'ai') {
             console.error("playTurn should not be called for AI anymore.");
@@ -752,11 +781,34 @@ document.addEventListener('DOMContentLoaded', () => {
     async function switchTurn(fromPlayer) {
         clearInactivityTimer();
         hideDiscardHint(); // Hide any existing hints before switching turns
+        hideShakeBubbles(); // Clear any previous shake bubbles
+        hideInfoBubble(); // Clear any previous info bubbles
+
         currentPlayer = fromPlayer === 'player' ? 'ai' : 'player';
+
         if (currentPlayer === 'ai') {
+            if (aiShakeActive) {
+                showShakeBubble('ai', '패 흔들었소.');
+            }
             playerHandDiv.style.pointerEvents = 'none';
             setTimeout(aiTurn, 1000);
-        } else {
+        } else { // Player's turn
+            if (playerShakeActive) {
+                showShakeBubble('player', '흔들었어요!');
+            }
+
+            const playerScoreInfo = calculateScore(playerCaptured);
+            const aiScoreInfo = calculateScore(aiCaptured);
+            if (
+                playerScoreInfo.score < 7 &&
+                aiScoreInfo.score < 7 &&
+                (aiScoreInfo.piCount >= 10 || aiScoreInfo.gwangCount === 3)
+            ) {
+                const currentScore = playerScoreInfo.score;
+                const message = `점수 7점이 나야 스탑할수 있어요 현재는 [${currentScore}]점이에요. 화이팅~`;
+                showInfoBubble(message);
+            }
+            
             // It's player's turn. Check if they have cards.
             if (playerHand.length === 0) {
                 // Player has no cards, round ends. Calculate winner.
@@ -853,6 +905,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 2900); // Remove just before animation ends
     }
 
+    function showShakeBubble(player, message) {
+        const areaId = player === 'player' ? 'player-area' : 'ai-area';
+        const parentArea = document.getElementById(areaId);
+        if (!parentArea) return;
+
+        // Remove any existing bubble first
+        const existingBubble = parentArea.querySelector('.speech-bubble');
+        if (existingBubble) {
+            existingBubble.remove();
+        }
+
+        const bubble = document.createElement('div');
+        bubble.className = 'speech-bubble';
+        bubble.textContent = message;
+
+        // Position bubble
+        if (player === 'player') {
+            bubble.style.bottom = '130px'; // Above the hand
+            bubble.style.right = '20px';
+        } else {
+            bubble.style.top = '90px'; // Below the hand
+            bubble.style.right = '20px';
+        }
+        
+        parentArea.appendChild(bubble);
+
+        // Animate in
+        setTimeout(() => {
+            bubble.classList.add('visible');
+        }, 100);
+    }
+
+    function hideShakeBubbles() {
+        const bubbles = document.querySelectorAll('.speech-bubble');
+        bubbles.forEach(bubble => bubble.remove());
+    }
+
+    function showInfoBubble(message) {
+        const parentArea = document.getElementById('player-area');
+        if (!parentArea) return;
+
+        // Remove previous info bubble
+        const existingBubble = parentArea.querySelector('.info-bubble');
+        if (existingBubble) existingBubble.remove();
+
+        const bubble = document.createElement('div');
+        bubble.className = 'info-bubble';
+        bubble.textContent = message;
+        parentArea.appendChild(bubble);
+
+        // Animate in
+        setTimeout(() => bubble.classList.add('visible'), 100);
+
+        // Animate out and remove after a delay
+        setTimeout(() => {
+            bubble.classList.remove('visible');
+            setTimeout(() => {
+                if (bubble.parentElement) {
+                    bubble.remove();
+                }
+            }, 500); // Remove from DOM after fade out
+        }, 4500); // Visible for 4.5 seconds
+    }
+
+    function hideInfoBubble() {
+        const bubble = document.querySelector('.info-bubble');
+        if (bubble) bubble.remove();
+    }
+
     // --- HINT SYSTEM ---
     function findBestDiscard() {
         // 1. Check if any capture is possible. If so, no hint.
@@ -925,10 +1046,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function handleSpecialActions() {
         if (isGoStopTurn) return;
-        checkForSpecials(); // This sets canBomb and bombMonth for playTurn to use
+        const special = checkForSpecials(); // This now returns an object
 
         // Offer to shake.
-        if (canShake && !playerShake && !hasBeenOfferedShake) {
+        if (special.canShake && !playerShake && !hasBeenOfferedShake) {
             hasBeenOfferedShake = true; // Ask only once per round
             const choice = await showPopup('흔들기!', '패에 같은 월의 카드가 3장 있습니다.\n흔드시겠습니까?',
                 [
@@ -937,7 +1058,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 ]
             );
             if (choice === 'yes') {
-                playerShake = true;
+                playerShake = true; // For score bonus
+                playerShakeActive = true; // For bubble
+                // Mark the cards as shaken
+                const monthToShake = special.shakeMonth;
+                playerHand.forEach(card => {
+                    if (card.month === monthToShake) {
+                        card.isShaken = true;
+                    }
+                });
+                showShakeBubble('player', '흔들었어요!');
+                render(); // Re-render to show shaken cards
             }
         }
 
@@ -977,25 +1108,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const hand = playerHand;
         const handCounts = hand.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
         
-        canShake = false;
-        canBomb = false;
-        bombMonth = -1;
+        let special = { canShake: false, shakeMonth: -1, canBomb: false, bombMonth: -1 };
 
         for (const month in handCounts) {
             if (handCounts[month] >= 3) {
-                canShake = true;
+                special.canShake = true;
+                special.shakeMonth = parseInt(month);
                 // Check for bomb condition: 3 cards in hand, 1 on floor
                 const floorHasMatch = floor.some(c => c.month === parseInt(month));
                 if (handCounts[month] === 3 && floorHasMatch) {
                     const floorCount = floor.filter(c => c.month === parseInt(month)).length;
                     if (floorCount === 1) {
-                        canBomb = true;
-                        bombMonth = parseInt(month);
+                        special.canBomb = true;
+                        special.bombMonth = parseInt(month);
                         break; // Found a bomb, which is the most specific special, so we can stop.
                     }
                 }
             }
         }
+        // Update global vars for legacy compatibility with playTurn
+        canBomb = special.canBomb;
+        bombMonth = special.bombMonth;
+        return special;
     }
 
     function getAISpecialMove() {
@@ -1129,6 +1263,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function aiPlayTurn(playedCard) {
+        if (aiShakeActive) {
+            const shakenCardsInHand = aiHand.filter(c => c.isShaken);
+            if (shakenCardsInHand.length > 0) {
+                const shakenMonth = shakenCardsInHand[0].month;
+                if (playedCard.month === shakenMonth) {
+                    aiShakeActive = false;
+                    hideShakeBubbles(); // Hide the bubble immediately
+                }
+            }
+        }
+
         const player = 'ai';
         const mainCaptured = aiCaptured;
         let handCaptures = [];
@@ -1271,15 +1416,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (specialMove.action === 'shake') {
-                aiShake = true;
+                aiShake = true; // For score bonus
+                aiShakeActive = true; // For bubble
+
                 const monthToShake = specialMove.month;
                 aiHand.forEach(card => {
                     if (card.month === monthToShake) {
                         card.isShaken = true;
                     }
                 });
-                await showToastPopup("흔들기!", "서울할머니가 흔들었습니다!\n흔든 패를 확인하세요.");
+                showShakeBubble('ai', '패 흔들었소.');
                 render();
+                await sleep(1500); // 흔드는 걸 보여주기 위한 잠시 멈춤
             }
 
             const cardToPlay = getAIBestMove();

@@ -671,7 +671,7 @@ button:disabled {
     color: #000; /* Black text for high contrast */
     padding: 15px 22px; /* Increased padding */
     border-radius: 12px;
-    font-size: 28px; /* Even larger font size */
+    font-size: 26px; /* Standardized size */
     font-weight: bold; /* Bolder text */
     white-space: nowrap;
     margin-bottom: 5px;
@@ -724,4 +724,67 @@ button:disabled {
     15% { opacity: 1; transform: translateX(-50%) translateY(0); }
     85% { opacity: 1; transform: translateX(-50%) translateY(0); }
     100% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+}
+
+/* --- Speech Bubble for Shake Action --- */
+.speech-bubble {
+    position: absolute;
+    background-color: #ffc107;
+    color: black;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 26px;
+    font-weight: bold;
+    z-index: 50;
+    pointer-events: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border: 2px solid #fff;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateY(10px);
+    white-space: nowrap;
+}
+
+.speech-bubble.visible {
+    opacity: 1;
+    transform: translateY(-10px);
+}
+
+.speech-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid #ffc107;
+}
+
+/* --- Info Bubble for Game State --- */
+.info-bubble {
+    position: absolute;
+    background-color: #007bff; /* Blue color for info */
+    color: white;
+    padding: 10px 15px;
+    border-radius: 15px;
+    font-size: 22px; /* Standardized size */
+    font-weight: bold;
+    z-index: 49; /* Slightly lower than shake bubble */
+    pointer-events: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border: 2px solid #fff;
+    opacity: 0;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    transform: translateY(10px);
+    white-space: nowrap;
+    bottom: 130px; /* Above the hand */
+    left: 20px; /* Position on the left */
+}
+
+.info-bubble.visible {
+    opacity: 1;
+    transform: translateY(-10px);
 }
