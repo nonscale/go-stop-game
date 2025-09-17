@@ -16,9 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiMoneySpan = document.getElementById('ai-money');
 
     playerHandDiv.addEventListener('click', (e) => {
-        if (currentPlayer !== 'player' || isGoStopTurn) return;
+        if (currentPlayer !== 'player' || isGoStopTurn || isTurnInProgress) return; // Add lock check
         const cardDiv = e.target.closest('.card');
         if (cardDiv && cardDiv.dataset.cardId) {
+            isTurnInProgress = true; // Set lock
             hideDiscardHint(); // Hide hint on any card click
             const cardId = cardDiv.dataset.cardId; // Keep it as a string
             // Try to parse, if it's a number, it's a normal card. If not, it's a dummy.
@@ -27,12 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    document.addEventListener('mousemove', () => {
-        // If it's player's turn and the game is not paused for Go/Stop decision
-        if (currentPlayer === 'player' && !isGoStopTurn) {
-            startInactivityTimer(); // Reset the timer on mouse move
-        }
-    });
+    
 
     // Popup Elements
     const popupOverlay = document.getElementById('popup-overlay');
@@ -95,14 +91,11 @@ document.addEventListener('DOMContentLoaded', () => {
     CARDS.push({ id: 47, month: 12, type: TYPES.PI, name: '12월 (쌍피)', isDoublePi: true, image: 'Hanafuda_December_Kasu_2_Alt.svg.png' });
     CARDS.push({ id: 48, month: 12, type: TYPES.PI, name: '12월 (피)', image: 'Hanafuda_December_Kasu_3_Alt.svg.png' });
 
-    // 스크립트 로드 시 원본 덱을 한번 섞어 초기 정렬 상태를 완전히 제거합니다.
-    shuffleDeck(CARDS);
-
     // --- Game State ---
     let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer;
     let playerMoney, aiMoney;
     let ppukStacks = [], playerShake = false, aiShake = false, playerShakeActive = false, aiShakeActive = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
-    let isGoStopTurn = false, canBomb = false, bombMonth = -1, inactivityTimer = null;
+    let isGoStopTurn = false, canBomb = false, bombMonth = -1, inactivityTimer = null, turnNotificationTimer = null, isTurnInProgress = false;
 
     function loadGameData() {
         playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
@@ -322,8 +315,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function shuffleDeck(array) {
-        // 더 강력한 셔플을 위해 sort와 Math.random을 이용합니다.
-        return array.sort(() => Math.random() - 0.5);
+        // Fisher-Yates shuffle for a more robust and unbiased shuffle.
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
 
     async function animateDeckFlip(drawnCard) {
@@ -362,16 +359,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function startGame(startingPlayer = 'player') {
-        // Reset card states before new round
-        CARDS.forEach(card => {
-            delete card.highlight;
-            delete card.aiHighlight;
-            delete card.isShaken;
-        });
+        // 덱을 원본 CARDS 배열의 깊은 복사본으로 만들어, 매 라운드가 새로운 카드 객체로 시작하도록 보장합니다.
+        // 이는 라운드 간 상태 오염을 방지하고 예기치 않은 시각적 버그를 해결합니다.
+        deck = JSON.parse(JSON.stringify(CARDS));
 
-        // 덱을 여러 번 섞어 무작위성을 높입니다. (같은 월 패 뭉침 현상 개선)
-        deck = [...CARDS]; // 매번 새로운 덱으로 시작
-        for (let i = 0; i < 5; i++) { // 셔플 횟수를 5회로 늘려 무작위성 강화
+        // 덱을 여러 번 섞어 무작위성을 높입니다.
+        for (let i = 0; i < 5; i++) {
             shuffleDeck(deck);
         }
 
@@ -566,6 +559,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function playTurn(player, cardId) {
+        hideTurnNotificationBubble(); // Hide inactivity message on action
         if (playerShakeActive) {
             const shakenCardsInHand = playerHand.filter(c => c.isShaken);
             if (shakenCardsInHand.length > 0) {
@@ -824,10 +818,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return; // Stop further turn processing
             }
 
+            isTurnInProgress = false; // Release lock
             playerHandDiv.style.pointerEvents = 'auto';
-            startInactivityTimer();
             try {
                 await handleSpecialActions();
+                // Start inactivity timer only after special actions (like popups) are done.
+                startInactivityTimer();
             } catch (e) {
                 console.error("Error during special actions on player turn:", e);
                 await showNotificationPopup("오류 발생", "게임 진행 중 오류가 발생했습니다: " + e.message);
@@ -886,10 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showTurnNotificationBubble() {
         // Remove any existing bubble first
-        const existingBubble = document.querySelector('.turn-notification-bubble');
-        if (existingBubble) {
-            existingBubble.remove();
-        }
+        hideTurnNotificationBubble();
 
         const bubble = document.createElement('div');
         bubble.className = 'turn-notification-bubble';
@@ -898,11 +891,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const playerArea = document.getElementById('player-area');
         playerArea.appendChild(bubble);
 
-        setTimeout(() => {
-            if(bubble.parentElement) {
-                bubble.remove();
-            }
-        }, 2900); // Remove just before animation ends
+        // Set a timer to automatically hide the bubble after 3 seconds
+        turnNotificationTimer = setTimeout(hideTurnNotificationBubble, 3000);
+    }
+
+    function hideTurnNotificationBubble() {
+        // Clear the auto-hide timer if it's running
+        if (turnNotificationTimer) {
+            clearTimeout(turnNotificationTimer);
+            turnNotificationTimer = null;
+        }
+        const existingBubble = document.querySelector('.turn-notification-bubble');
+        if (existingBubble) {
+            existingBubble.remove();
+        }
     }
 
     function showShakeBubble(player, message) {
@@ -935,6 +937,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             bubble.classList.add('visible');
         }, 100);
+
+        // Automatically hide the bubble after 3 seconds
+        setTimeout(hideShakeBubbles, 3000);
     }
 
     function hideShakeBubbles() {
@@ -1021,6 +1026,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const cardDiv = document.querySelector(`#player-hand .card[data-card-id="${cardId}"]`);
         if (!cardDiv) return;
 
+        // Add class to elevate the card's stacking context
+        cardDiv.classList.add('hinted-card');
+
         const hintContainer = document.createElement('div');
         hintContainer.className = 'hint-container';
         hintContainer.id = 'discard-hint';
@@ -1035,9 +1043,19 @@ document.addEventListener('DOMContentLoaded', () => {
         hintContainer.appendChild(hintBubble);
         hintContainer.appendChild(hintArrow);
         cardDiv.appendChild(hintContainer);
+
+        // Automatically hide the hint after 3 seconds
+        setTimeout(hideDiscardHint, 3000);
     }
 
     function hideDiscardHint() {
+        // Remove the helper class from any card that has it
+        const oldHintedCard = document.querySelector('.hinted-card');
+        if (oldHintedCard) {
+            oldHintedCard.classList.remove('hinted-card');
+        }
+
+        // Remove the hint element itself
         const existingHint = document.getElementById('discard-hint');
         if (existingHint) {
             existingHint.parentNode.removeChild(existingHint);
@@ -1631,6 +1649,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return { score, piCount, gwangCount: gwangs.length };
     }
 
+    function initializeCardHover() {
+        const capturedAreas = [
+            'player-gwang', 'player-yeol', 'player-tti', 'player-pi',
+            'ai-gwang', 'ai-yeol', 'ai-tti', 'ai-pi'
+        ];
+        const originalOverlap = 12; // Original overlap from renderCaptured
+        const spreadOverlap = 35;   // New overlap on hover (card width is 36px)
+
+        capturedAreas.forEach(id => {
+            const container = document.getElementById(id);
+            if (!container) return;
+
+            const section = container.closest('.section');
+
+            container.addEventListener('mouseenter', () => {
+                if (section) section.style.zIndex = '10';
+                const cards = container.querySelectorAll('.captured-card');
+                cards.forEach((card, index) => {
+                    card.style.left = `${index * spreadOverlap}px`;
+                });
+            });
+
+            container.addEventListener('mouseleave', () => {
+                if (section) section.style.zIndex = '1';
+                const cards = container.querySelectorAll('.captured-card');
+                cards.forEach((card, index) => {
+                    card.style.left = `${index * originalOverlap}px`;
+                });
+            });
+        });
+    }
+
     function enterFullscreen() {
         const elem = document.documentElement;
         if (elem.requestFullscreen) {
@@ -1716,5 +1766,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         loadGameData();
         startGame();
+        initializeCardHover();
     })();
 });
