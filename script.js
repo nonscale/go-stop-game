@@ -393,7 +393,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (initialPpukMonths.length > 0) {
-
+            const monthList = initialPpukMonths.join(', ');
+            await showNotificationPopup("시작 뻑!", `바닥에 ${monthList}월 패 3장이 깔린 상태로 시작합니다.`);
         }
 
                 // Nagari (misdeal) check for 4 cards of the same month in any hand or on the floor
