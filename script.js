@@ -396,10 +396,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }
 
-                // Nagari (misdeal) check for 4 cards of the same month in one hand
+                // Nagari (misdeal) check for 4 cards of the same month in any hand or on the floor
         const playerHandCounts = playerHand.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
         const aiHandCounts = aiHand.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
-        const isMisdeal = Object.values(playerHandCounts).some(count => count === 4) || Object.values(aiHandCounts).some(count => count === 4);
+        const floorCounts = floor.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
+        const isMisdeal = Object.values(playerHandCounts).some(count => count === 4) || 
+                          Object.values(aiHandCounts).some(count => count === 4) ||
+                          Object.values(floorCounts).some(count => count === 4);
 
         if (isMisdeal) {
             await showNotificationPopup("재시작 (나가리)", "같은 월의 패 4장이 한꺼번에 깔려 판을 다시 시작합니다.");
