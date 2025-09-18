@@ -418,6 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
             playerHandDiv.style.pointerEvents = 'auto';
             try {
                 await handleSpecialActions();
+                startInactivityTimer(); // Start timer on player's first turn
             } catch (e) {
                 console.error("Error during special actions at start:", e);
                 await showNotificationPopup("오류 발생", "게임 시작 중 오류가 발생했습니다: " + e.message);
@@ -795,17 +796,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showShakeBubble('player', '흔들었어요!');
             }
 
-            const playerScoreInfo = calculateScore(playerCaptured);
-            const aiScoreInfo = calculateScore(aiCaptured);
-            if (
-                playerScoreInfo.score < 7 &&
-                aiScoreInfo.score < 7 &&
-                (aiScoreInfo.piCount >= 10 || aiScoreInfo.gwangCount === 3)
-            ) {
-                const currentScore = playerScoreInfo.score;
-                const message = `점수 7점이 나야 스탑할수 있어요 현재는 [${currentScore}]점이에요. 화이팅~`;
-                showInfoBubble(message);
-            }
+            // Player's turn notification is now handled by the inactivity timer's bubble.
             
             // It's player's turn. Check if they have cards.
             if (playerHand.length === 0) {
@@ -876,12 +867,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startInactivityTimer() {
-        clearInactivityTimer(); // Always clear previous timer before starting a new one
-        if (currentPlayer !== 'player' || isGoStopTurn) return; // Only run for player's active turn
+        clearInactivityTimer();
+        if (currentPlayer !== 'player' || isGoStopTurn) return;
 
-        inactivityTimer = setTimeout(() => {
-            showTurnNotificationBubble();
-        }, 5000); // 5 seconds
+        const initialDelay = 5000;
+        const repeatInterval = 20000; // 5s show time + 15s wait time
+
+        const scheduleNextBubble = (delay) => {
+            inactivityTimer = setTimeout(() => {
+                showTurnNotificationBubble();
+                scheduleNextBubble(repeatInterval); // Schedule the next one
+            }, delay);
+        };
+
+        scheduleNextBubble(initialDelay); // Schedule the first one
     }
 
     function showTurnNotificationBubble() {
@@ -890,13 +889,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const bubble = document.createElement('div');
         bubble.className = 'turn-notification-bubble';
-        bubble.textContent = '김여사님 차례입니다.';
+
+        const playerScoreInfo = calculateScore(playerCaptured);
+        const currentScore = playerScoreInfo.score;
+        
+        let message = '김여사님 차례에요.';
+        if (currentScore < 7) {
+            message += `<br>7점(현재: ${currentScore}점)이 되어야 스톱할 수 있어요.`;
+        }
+        bubble.innerHTML = message; // Use innerHTML for the line break
 
         const playerArea = document.getElementById('player-area');
         playerArea.appendChild(bubble);
 
-        // Set a timer to automatically hide the bubble after 3 seconds
-        turnNotificationTimer = setTimeout(hideTurnNotificationBubble, 3000);
+        // Set a timer to automatically hide the bubble after 5 seconds
+        turnNotificationTimer = setTimeout(hideTurnNotificationBubble, 5000);
     }
 
     function hideTurnNotificationBubble() {
