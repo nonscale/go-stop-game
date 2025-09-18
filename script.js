@@ -359,6 +359,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function startGame(startingPlayer = 'player') {
+        isTurnInProgress = false; // Reset turn lock at the start of every round
         // 덱을 원본 CARDS 배열의 깊은 복사본으로 만들어, 매 라운드가 새로운 카드 객체로 시작하도록 보장합니다.
         // 이는 라운드 간 상태 오염을 방지하고 예기치 않은 시각적 버그를 해결합니다.
         deck = JSON.parse(JSON.stringify(CARDS));
@@ -1208,6 +1209,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Other bomb effects
         await stealPi(player);
         aiShake = true;
+
+        // Add two dummy cards to AI's hand to compensate for the bomb
+        const dummyCard1 = { id: `dummy_${Date.now()}_1`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
+        const dummyCard2 = { id: `dummy_${Date.now()}_2`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
+        aiHand.push(dummyCard1, dummyCard2);
 
         // --- PART 2: Draw card from deck ---
         const drawnCard = deck.pop();
