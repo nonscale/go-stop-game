@@ -1309,6 +1309,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function aiPlayTurn(playedCard) {
+        // Handle Dummy Card play by calling the generic finishTurn function
+        if (playedCard.type === 'dummy') {
+            const player = 'ai';
+            // Briefly add to floor for visualization, then remove
+            const aiHandIndex = aiHand.findIndex(c => c.id === playedCard.id);
+            if (aiHandIndex > -1) aiHand.splice(aiHandIndex, 1);
+            floor.push(playedCard);
+            render();
+            await sleep(800);
+            floor.pop();
+            render();
+            await sleep(500);
+            
+            // Finish turn by just drawing from the deck.
+            // This bypasses the complex logic below.
+            await finishTurn(player, null, null, null, 0);
+            return;
+        }
         if (aiShakeActive) {
             const shakenCardsInHand = aiHand.filter(c => c.isShaken);
             if (shakenCardsInHand.length > 0) {
