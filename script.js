@@ -359,22 +359,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function startGame(startingPlayer = 'player') {
-        isTurnInProgress = false; // Reset turn lock at the start of every round
-        // 덱을 원본 CARDS 배열의 깊은 복사본으로 만들어, 매 라운드가 새로운 카드 객체로 시작하도록 보장합니다.
-        // 이는 라운드 간 상태 오염을 방지하고 예기치 않은 시각적 버그를 해결합니다.
+        // Reset all game state variables for a new round
         deck = JSON.parse(JSON.stringify(CARDS));
+        playerHand = [];
+        aiHand = [];
+        floor = [];
+        playerCaptured = [];
+        aiCaptured = [];
+        ppukStacks = [];
+        playerShake = false;
+        aiShake = false;
+        playerShakeActive = false;
+        aiShakeActive = false;
+        playerGoCount = 0;
+        aiGoCount = 0;
+        canShake = false;
+        isGoStopTurn = false;
+        hasBeenOfferedShake = false;
+        canBomb = false;
+        bombMonth = -1;
+        isTurnInProgress = false;
 
-        // 덱을 여러 번 섞어 무작위성을 높입니다.
+        // Shuffle deck
         for (let i = 0; i < 5; i++) {
             shuffleDeck(deck);
         }
 
-        playerHand = []; aiHand = []; floor = []; playerCaptured = []; aiCaptured = [];
-        ppukStacks = []; 
-        playerShake = false; aiShake = false; 
-        playerShakeActive = false; aiShakeActive = false;
-        playerGoCount = 0; aiGoCount = 0;
-        canShake = false; isGoStopTurn = false; hasBeenOfferedShake = false;
+        // Deal cards
         for (let i = 0; i < 10; i++) { playerHand.push(deck.pop()); aiHand.push(deck.pop()); }
         for (let i = 0; i < 8; i++) { floor.push(deck.pop()); }
         currentPlayer = startingPlayer;
