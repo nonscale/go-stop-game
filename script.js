@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer;
     let playerMoney, aiMoney;
     let ppukStacks = [], playerShake = false, aiShake = false, playerShakeActive = false, aiShakeActive = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
-    let isGoStopTurn = false, canBomb = false, bombMonth = -1, inactivityTimer = null, turnNotificationTimer = null, isTurnInProgress = false;
+    let isGoStopTurn = false, canBomb = false, bombMonths = [], inactivityTimer = null, turnNotificationTimer = null, isTurnInProgress = false;
 
     function loadGameData() {
         playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
@@ -604,8 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const playedCard = hand[cardIndex];
 
             // Check if the played card is part of a bomb
-            if (canBomb && playedCard.month === bombMonth) {
-                await playBomb(bombMonth);
+            if (canBomb && bombMonths.includes(playedCard.month)) {
+                await playBomb(playedCard.month);
                 return; // End the turn here as the bomb was played
             }
 
@@ -1149,27 +1149,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const hand = playerHand;
         const handCounts = hand.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
         
-        let special = { canShake: false, shakeMonth: -1, canBomb: false, bombMonth: -1 };
+        let special = { canShake: false, shakeMonth: -1, canBomb: false, bombMonths: [] };
 
         for (const month in handCounts) {
-            if (handCounts[month] >= 3) {
-                special.canShake = true;
-                special.shakeMonth = parseInt(month);
-                // Check for bomb condition: 3 cards in hand, 1 on floor
-                const floorHasMatch = floor.some(c => c.month === parseInt(month));
-                if (handCounts[month] === 3 && floorHasMatch) {
-                    const floorCount = floor.filter(c => c.month === parseInt(month)).length;
+            const monthNum = parseInt(month);
+            if (handCounts[monthNum] >= 3) {
+                if (!special.canShake) { // Only find the first one for shaking
+                    special.canShake = true;
+                    special.shakeMonth = monthNum;
+                }
+                
+                const floorHasMatch = floor.some(c => c.month === monthNum);
+                if (handCounts[monthNum] === 3 && floorHasMatch) {
+                    const floorCount = floor.filter(c => c.month === monthNum).length;
                     if (floorCount === 1) {
                         special.canBomb = true;
-                        special.bombMonth = parseInt(month);
-                        break; // Found a bomb, which is the most specific special, so we can stop.
+                        special.bombMonths.push(monthNum); // But find all bombs
                     }
                 }
             }
         }
-        // Update global vars for legacy compatibility with playTurn
+        // Update global vars
         canBomb = special.canBomb;
-        bombMonth = special.bombMonth;
+        bombMonths = special.bombMonths;
         return special;
     }
 
