@@ -15,6 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerMoneySpan = document.getElementById('player-money');
     const aiMoneySpan = document.getElementById('ai-money');
 
+    const playerConditionalStopBtn = document.getElementById('player-conditional-stop-btn');
+    if (playerConditionalStopBtn) {
+        playerConditionalStopBtn.addEventListener('click', () => {
+            if (currentPlayer !== 'player' || isGoStopTurn || isTurnInProgress) {
+                return; // Not player's turn or a decision is already pending.
+            }
+
+            const playerScoreInfo = calculateScore(playerCaptured);
+            const currentScore = playerScoreInfo.score;
+
+            if (currentScore < 7) {
+                showNotificationPopup("점수 확인", `현재 점수는 ${currentScore}점 입니다. 7점이 되지 않았습니다.`);
+            } else {
+                handleGoStopPopup(); // Score is high enough, show the real Go/Stop choice.
+            }
+        });
+    }
+
     playerHandDiv.addEventListener('click', (e) => {
         if (currentPlayer !== 'player' || isGoStopTurn || isTurnInProgress) return; // Add lock check
         const cardDiv = e.target.closest('.card');
