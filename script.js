@@ -1130,12 +1130,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 render(); // Re-render to show shaken cards
             }
         }
-
-        // Show discard hint if applicable
-        const bestDiscard = findBestDiscard();
-        if (bestDiscard) {
-            showDiscardHint(bestDiscard.id);
-        }
     }
 
     async function handleGoStopPopup() {
