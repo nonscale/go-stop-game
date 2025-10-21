@@ -1,5 +1,8 @@
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const OPPONENT_NAME = "제주아줌마";
 document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('opponent-name').textContent = OPPONENT_NAME;
+    document.getElementById('opponent-name-info').textContent = OPPONENT_NAME;
     // Move deck to the floor area for better layout
     const deckArea = document.getElementById('deck-area');
     const floorArea = document.getElementById('floor-area');
@@ -462,7 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (winner === 'draw') {
             message = "이번 판은 무승부입니다!";
         } else {
-            const winnerName = winner === 'player' ? '김여사' : '서울할머니';
+            const winnerName = winner === 'player' ? '김여사' : OPPONENT_NAME;
             const winnerCaptured = winner === 'player' ? playerCaptured : aiCaptured;
             const loserCaptured = winner === 'player' ? aiCaptured : playerCaptured;
             const winnerGoCount = winner === 'player' ? playerGoCount : aiGoCount;
@@ -550,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Check for bankruptcy and reset if needed
         if (playerMoney <= 0 || aiMoney <= 0) {
-            const bankruptPlayer = playerMoney <= 0 ? '김여사' : '서울할머니';
+            const bankruptPlayer = playerMoney <= 0 ? '김여사' : OPPONENT_NAME;
             await showPopup("게임 종료", `${bankruptPlayer}님이 파산했습니다!\n새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
             localStorage.clear(); // Clear all game data on bankruptcy
             loadGameData();
@@ -1268,8 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!eventOccurred) {
             const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
-            if (drawnPpukIndex > -1) {
-                await showToastPopup("'싼 거' 먹기!", `서울할머니님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
+                await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
                 const ppukCards = floor.filter(c => c.month === drawnCard.month);
                 deckCaptures.push(...ppukCards);
                 ppukStacks.splice(drawnPpukIndex, 1);
@@ -1304,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Post-Turn Events ---
         if (floor.length === 0 && allTurnCaptures.length > 0 && deck.length > 0) {
-            await showToastPopup("싹쓸이!", `서울할머니님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
+            await showToastPopup("싹쓸이!", `${OPPONENT_NAME}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
             await stealPi(player);
         }
 
@@ -1373,8 +1375,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Ppeok-solving logic ---
         const ppukIndex = ppukStacks.indexOf(playedCard.month);
         if (ppukIndex > -1) {
-            await showToastPopup("'싼 거' 먹기!", `서울할머니님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
-            const ppukCards = floor.filter(c => c.month === playedCard.month);
+                            await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);            const ppukCards = floor.filter(c => c.month === playedCard.month);
             handCaptures.push(...ppukCards);
             ppukStacks.splice(ppukIndex, 1);
             await stealPi(player);
@@ -1407,7 +1408,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (playedMonth && drawnCard.month === playedMonth && ppukIndex === -1) {
             if (matchCountAtTurnStart === 2) { // Tadak
-                await showNotificationPopup("따닥!", `서울할머니님의 따닥! 상대방의 피를 한 장 가져옵니다.`);
+                await showNotificationPopup("따닥!", `${OPPONENT_NAME}님의 따닥! 상대방의 피를 한 장 가져옵니다.`);
                 const remainingCardOnFloor = floor.find(c => c.month === playedMonth && ![...handCaptures, drawnCard].map(card => card.id).includes(c.id));
                 if (remainingCardOnFloor) deckCaptures.push(remainingCardOnFloor);
                 deckCaptures.push(drawnCard);
@@ -1422,7 +1423,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!eventOccurred) {
             const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
             if (drawnPpukIndex > -1) { // Resolve existing Ppeok with drawn card
-                await showToastPopup("'싼 거' 먹기!", `서울할머니님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
+                await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
                 const ppukCards = floor.filter(c => c.month === drawnCard.month);
                 deckCaptures.push(...ppukCards);
                 ppukStacks.splice(drawnPpukIndex, 1);
@@ -1430,7 +1431,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 const justPlayedOnFloor = floor.find(c => c.id === playedCard.id);
                 if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) { // Jjok
-                    await showToastPopup('쪽!', `서울할머니님, 쪽! 축하합니다!`);
+                    await showToastPopup('쪽!', `${OPPONENT_NAME}님, 쪽! 축하합니다!`);
                     deckCaptures.push(justPlayedOnFloor, drawnCard);
                     await stealPi(player);
                 } else { // Normal deck match
@@ -1463,7 +1464,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- Post-Turn Events ---
         if (floor.length === 0 && capturedInTurn && deck.length > 0) {
-            await showToastPopup("싹쓸이!", `서울할머니님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
+            await showToastPopup("싹쓸이!", `${OPPONENT_NAME}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
             await stealPi(player);
         }
 
