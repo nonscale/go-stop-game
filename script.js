@@ -1271,6 +1271,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!eventOccurred) {
             const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
+            if (drawnPpukIndex > -1) {
                 await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
                 const ppukCards = floor.filter(c => c.month === drawnCard.month);
                 deckCaptures.push(...ppukCards);
@@ -1375,7 +1376,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Ppeok-solving logic ---
         const ppukIndex = ppukStacks.indexOf(playedCard.month);
         if (ppukIndex > -1) {
-                            await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);            const ppukCards = floor.filter(c => c.month === playedCard.month);
+            await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
+            const ppukCards = floor.filter(c => c.month === playedCard.month);
             handCaptures.push(...ppukCards);
             ppukStacks.splice(ppukIndex, 1);
             await stealPi(player);
