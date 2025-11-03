@@ -114,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Game State ---
     let deck, floor, playerHand, aiHand, playerCaptured, aiCaptured, currentPlayer;
+    let playerStolenPi, aiStolenPi; // 훔친 피를 저장할 배열
     let playerMoney, aiMoney;
     let ppukStacks = [], playerShake = false, aiShake = false, playerShakeActive = false, aiShakeActive = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
     let isGoStopTurn = false, canBomb = false, bombMonths = [], inactivityTimer = null, turnNotificationTimer = null, isTurnInProgress = false;
@@ -217,17 +218,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
 
-        const renderCaptured = (playerPrefix, capturedCards) => {
+        const renderCaptured = (playerPrefix, capturedCards, stolenPi) => {
             const gwangDiv = document.getElementById(`${playerPrefix}-gwang`);
             const yeolDiv = document.getElementById(`${playerPrefix}-yeol`);
             const ttiDiv = document.getElementById(`${playerPrefix}-tti`);
             const piDiv = document.getElementById(`${playerPrefix}-pi`);
+            const stolenPiDiv = document.getElementById(`${playerPrefix}-stolen-pi`); // 훔친 피 영역
             gwangDiv.innerHTML = '';
             yeolDiv.innerHTML = '';
             ttiDiv.innerHTML = '';
             piDiv.innerHTML = '';
-            let gwangCount = 0, yeolCount = 0, ttiCount = 0, piCount = 0;
-            let gwangIndex = 0, yeolIndex = 0, ttiIndex = 0, piIndex = 0;
+            stolenPiDiv.innerHTML = ''; // 훔친 피 영역 초기화
+            let gwangCount = 0, yeolCount = 0, ttiCount = 0, piCount = 0, stolenPiCount = 0;
+            let gwangIndex = 0, yeolIndex = 0, ttiIndex = 0, piIndex = 0, stolenPiIndex = 0;
             const overlap = 12;
             capturedCards.sort((a, b) => a.month - b.month).forEach(card => {
                 const cardDiv = createCardDiv(card, true);
@@ -249,18 +252,27 @@ document.addEventListener('DOMContentLoaded', () => {
                     piCount += card.isDoublePi ? 2 : 1;
                 }
             });
+
+            stolenPi.sort((a, b) => a.month - b.month).forEach(card => {
+                const cardDiv = createCardDiv(card, true);
+                cardDiv.style.left = `${stolenPiIndex++ * overlap}px`;
+                stolenPiDiv.appendChild(cardDiv);
+                stolenPiCount += card.isDoublePi ? 2 : 1;
+            });
+
             document.getElementById(`${playerPrefix}-gwang-count`).textContent = gwangCount;
             document.getElementById(`${playerPrefix}-yeol-count`).textContent = yeolCount;
             document.getElementById(`${playerPrefix}-tti-count`).textContent = ttiCount;
             document.getElementById(`${playerPrefix}-pi-count`).textContent = piCount;
+            document.getElementById(`${playerPrefix}-stolen-pi-count`).textContent = stolenPiCount; // 훔친 피 개수 업데이트
         };
 
-        renderCaptured('player', playerCaptured);
-        renderCaptured('ai', aiCaptured);
+        renderCaptured('player', playerCaptured, playerStolenPi);
+        renderCaptured('ai', aiCaptured, aiStolenPi);
         playerMoneySpan.textContent = playerMoney;
         aiMoneySpan.textContent = aiMoney;
-        playerScoreSpan.textContent = calculateScore(playerCaptured).score;
-        aiScoreSpan.textContent = calculateScore(aiCaptured).score;
+        playerScoreSpan.textContent = calculateScore(playerCaptured, playerStolenPi).score;
+        aiScoreSpan.textContent = calculateScore(aiCaptured, aiStolenPi).score;
     }
 
     function hidePopup() {
@@ -387,6 +399,8 @@ document.addEventListener('DOMContentLoaded', () => {
         floor = [];
         playerCaptured = [];
         aiCaptured = [];
+        playerStolenPi = []; // 훔친 피 배열 초기화
+        aiStolenPi = []; // 훔친 피 배열 초기화
         ppukStacks = [];
         playerShake = false;
         aiShake = false;
@@ -468,12 +482,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const winnerName = winner === 'player' ? '김여사' : OPPONENT_NAME;
             const winnerCaptured = winner === 'player' ? playerCaptured : aiCaptured;
             const loserCaptured = winner === 'player' ? aiCaptured : playerCaptured;
+            const winnerStolenPi = winner === 'player' ? playerStolenPi : aiStolenPi;
+            const loserStolenPi = winner === 'player' ? aiStolenPi : playerStolenPi;
             const winnerGoCount = winner === 'player' ? playerGoCount : aiGoCount;
             const loserGoCount = winner === 'player' ? aiGoCount : playerGoCount;
             const winnerShake = winner === 'player' ? playerShake : aiShake;
 
-            const winnerScoreInfo = calculateScore(winnerCaptured);
-            const loserScoreInfo = calculateScore(loserCaptured);
+            const winnerScoreInfo = calculateScore(winnerCaptured, winnerStolenPi);
+            const loserScoreInfo = calculateScore(loserCaptured, loserStolenPi);
             
             const baseScore = winnerScoreInfo.score;
             let messageLines = [`${winnerName}님이 승리하셨습니다!`, '---'];
@@ -569,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         function stealPi(player) {
         const opponent = player === 'player' ? 'ai' : 'player';
         const opponentCaptured = opponent === 'player' ? playerCaptured : aiCaptured;
-        const playerCapturedPile = player === 'player' ? playerCaptured : aiCaptured;
+        const stolenPiPile = player === 'player' ? playerStolenPi : aiStolenPi; // 훔친 피를 담을 배열
 
         // Prefer to steal a single pi
         let stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI && !c.isDoublePi);
@@ -589,9 +605,9 @@ document.addEventListener('DOMContentLoaded', () => {
             stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI);
         }
 
-                if (stolenCardIndex > -1) {
+        if (stolenCardIndex > -1) {
             const stolenCard = opponentCaptured.splice(stolenCardIndex, 1)[0];
-            playerCapturedPile.push(stolenCard);
+            stolenPiPile.push(stolenCard); // 훔친 피 배열에 추가
             render();
         }
     }
@@ -923,7 +939,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bubble = document.createElement('div');
         bubble.className = 'turn-notification-bubble';
 
-        const playerScoreInfo = calculateScore(playerCaptured);
+        const playerScoreInfo = calculateScore(playerCaptured, playerStolenPi);
         const currentScore = playerScoreInfo.score;
         
         let message = '김여사님 차례에요.';
@@ -1139,8 +1155,8 @@ document.addEventListener('DOMContentLoaded', () => {
         isGoStopTurn = true;
         clearInactivityTimer();
 
-        const playerScore = calculateScore(playerCaptured).score;
-        const aiScore = calculateScore(aiCaptured).score;
+        const playerScore = calculateScore(playerCaptured, playerStolenPi).score;
+        const aiScore = calculateScore(aiCaptured, aiStolenPi).score;
         const message = `현재 점수: ${playerScore}점 (상대: ${aiScore}점)\n'고' 하시겠습니까?`;
 
         const choice = await showPopup('고 또는 스톱', message, 
@@ -1548,8 +1564,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Bonus if it helps complete a Yaku
                 const futureCaptures = [...aiCaptured, card, bestMatch];
-                const scoreBefore = calculateScore(aiCaptured).score;
-                const scoreAfter = calculateScore(futureCaptures).score;
+                const scoreBefore = calculateScore(aiCaptured, aiStolenPi).score;
+                const scoreAfter = calculateScore(futureCaptures, aiStolenPi).score;
                 if (scoreAfter > scoreBefore) {
                     currentScore += (scoreAfter - scoreBefore) * 10;
                 }
@@ -1642,8 +1658,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function updateScores(player) {
-        const playerScoreInfo = calculateScore(playerCaptured);
-        const aiScoreInfo = calculateScore(aiCaptured);
+        const playerScoreInfo = calculateScore(playerCaptured, playerStolenPi);
+        const aiScoreInfo = calculateScore(aiCaptured, aiStolenPi);
 
         if (player === 'player') {
             if (playerScoreInfo.score >= 7 && !isGoStopTurn) {
@@ -1680,7 +1696,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return false; // No Go/Stop decision
     }
 
-    function calculateScore(captured) {
+    function calculateScore(captured, stolenPi = []) {
         if (!captured) {
             return { score: 0, piCount: 0, gwangCount: 0 };
         }
@@ -1706,7 +1722,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nonGodoriYeols = yeols.filter(c => !godoriCards.includes(c));
         if (nonGodoriYeols.length + godoriCards.length >= 5) score += nonGodoriYeols.length + godoriCards.length - 4;
         
-        const piCount = pis.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0);
+        const piCount = pis.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0) + stolenPi.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0);
         if (piCount >= 10) score += piCount - 9;
 
         return { score, piCount, gwangCount: gwangs.length };
