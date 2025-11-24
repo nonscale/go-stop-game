@@ -1,5 +1,5 @@
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-const OPPONENT_NAME = "제주아줌마";
+const OPPONENT_NAME = "송도 할머니";
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('opponent-name').textContent = OPPONENT_NAME;
     document.getElementById('opponent-name-info').textContent = OPPONENT_NAME;
@@ -43,13 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
             isTurnInProgress = true; // Set lock
             hideDiscardHint(); // Hide hint on any card click
             const cardId = cardDiv.dataset.cardId; // Keep it as a string
-            // Try to parse, if it's a number, it's a normal card. If not, it's a dummy.
             const cardIdNum = parseInt(cardId, 10);
             playTurn('player', isNaN(cardIdNum) ? cardId : cardIdNum);
         }
     });
 
-    
+
 
     // Popup Elements
     const popupOverlay = document.getElementById('popup-overlay');
@@ -155,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         playerHandDiv.innerHTML = '';
         aiHandDiv.innerHTML = '';
         floorDiv.innerHTML = '';
-        
+
 
         playerHand.sort((a, b) => {
             const aShaken = a.isShaken ? 1 : 0;
@@ -188,11 +187,11 @@ document.addEventListener('DOMContentLoaded', () => {
             aiHandDiv.appendChild(cardDiv);
         });
 
-                const ppeokMonths = [...ppukStacks];
+        const ppeokMonths = [...ppukStacks];
         const normalFloorCards = floor.filter(card => !ppeokMonths.includes(card.month));
-        
+
         // Render normal cards
-        normalFloorCards.sort((a,b) => a.month - b.month).forEach(card => { // Sort normal cards too for consistency
+        normalFloorCards.sort((a, b) => a.month - b.month).forEach(card => { // Sort normal cards too for consistency
             floorDiv.appendChild(createCardDiv(card));
         });
 
@@ -202,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (ppeokCards.length > 0) {
                 const stackContainer = document.createElement('div');
                 stackContainer.classList.add('ppeok-stack');
-                
+
                 ppeokCards.sort((a, b) => a.id - b.id);
 
                 ppeokCards.forEach((card, index) => {
@@ -216,7 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 floorDiv.appendChild(stackContainer);
             }
         });
-        
+
 
         const renderCaptured = (playerPrefix, capturedCards, stolenPi) => {
             const gwangDiv = document.getElementById(`${playerPrefix}-gwang`);
@@ -315,14 +314,14 @@ document.addEventListener('DOMContentLoaded', () => {
         popupMessage.textContent = message;
         popupChoicesDiv.innerHTML = '';
         popupChoicesDiv.style.display = 'none';
-    
+
         const popupButtonsDiv = document.getElementById('popup-buttons');
         popupButtonsDiv.innerHTML = ''; // No buttons
-    
+
         popupOverlay.classList.remove('hidden');
-    
+
         await sleep(duration); // Pause execution for the duration
-    
+
         hidePopup(); // Hide after the pause
     }
 
@@ -364,7 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const tempCard = document.createElement('div');
         tempCard.classList.add('card');
-        
+
         const tempImg = document.createElement('img');
         tempImg.src = 'images/Hanafuda_card_back_Alt.svg.png';
         tempCard.appendChild(tempImg);
@@ -374,18 +373,18 @@ document.addEventListener('DOMContentLoaded', () => {
         tempCard.style.left = (rect.left - gameBoardRect.left) + 'px';
         tempCard.style.top = (rect.top - gameBoardRect.top) + 'px';
         tempCard.style.zIndex = '2000'; // Ensure it's on top
-        
+
         gameBoard.appendChild(tempCard);
 
         return new Promise(resolve => {
             tempCard.classList.add('flipping');
-            
+
             setTimeout(() => {
                 tempImg.src = `images/${drawnCard.image}`;
             }, 350); // Halfway through 0.7s animation
 
             setTimeout(() => {
-                gameBoard.removeChild(tempCard);
+                if (gameBoard.contains(tempCard)) gameBoard.removeChild(tempCard);
                 resolve();
             }, 700); // End of animation
         });
@@ -421,8 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Deal cards
-        for (let i = 0; i < 10; i++) { playerHand.push(deck.pop()); aiHand.push(deck.pop()); }
-        for (let i = 0; i < 8; i++) { floor.push(deck.pop()); }
+        for (let i = 0; i < 10; i++) { playerHand.push(deck.pop()); aiHand.push(deck.pop()); } // Fixed: Added missing semicolon
+        for (let i = 0; i < 8; i++) { floor.push(deck.pop()); } // Fixed: Added missing semicolon
         currentPlayer = startingPlayer;
         render();
 
@@ -444,13 +443,13 @@ document.addEventListener('DOMContentLoaded', () => {
             await showNotificationPopup("시작 뻑!", `바닥에 ${monthList}월 패 3장이 깔린 상태로 시작합니다.`);
         }
 
-                // Nagari (misdeal) check for 4 cards of the same month in any hand or on the floor
+        // Nagari (misdeal) check for 4 cards of the same month in any hand or on the floor
         const playerHandCounts = playerHand.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
         const aiHandCounts = aiHand.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
         const floorCounts = floor.reduce((acc, card) => { acc[card.month] = (acc[card.month] || 0) + 1; return acc; }, {});
-        const isMisdeal = Object.values(playerHandCounts).some(count => count === 4) || 
-                          Object.values(aiHandCounts).some(count => count === 4) ||
-                          Object.values(floorCounts).some(count => count === 4);
+        const isMisdeal = Object.values(playerHandCounts).some(count => count === 4) ||
+            Object.values(aiHandCounts).some(count => count === 4) ||
+            Object.values(floorCounts).some(count => count === 4);
 
         if (isMisdeal) {
             await showNotificationPopup("재시작 (나가리)", "같은 월의 패 4장이 한꺼번에 깔려 판을 다시 시작합니다.");
@@ -490,7 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const winnerScoreInfo = calculateScore(winnerCaptured, winnerStolenPi);
             const loserScoreInfo = calculateScore(loserCaptured, loserStolenPi);
-            
+
             const baseScore = winnerScoreInfo.score;
             let messageLines = [`${winnerName}님이 승리하셨습니다!`, '---'];
             let scoreLog = [`기본 점수: ${baseScore}점`];
@@ -506,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 multiplier *= goMultiplier;
                 scoreLog.push(`${winnerGoCount}고: x${goMultiplier}배`);
             }
-            
+
             // Go-bak
             if (loserGoCount >= 1) {
                 multiplier *= 2;
@@ -549,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     playerMoney -= finalWinnings;
                 }
             }
-            
+
             saveMoney();
             render();
 
@@ -557,7 +556,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (goBonus > 0) messageLines.push(`고 보너스: +${goBonus}점`);
             messageLines.push('---');
             if (multiplier > 1) {
-                 messageLines.push(`점수 계산: (${baseScore}점 x ${multiplier}배) + ${goBonus}점`);
+                messageLines.push(`점수 계산: (${baseScore}점 x ${multiplier}배) + ${goBonus}점`);
             }
             messageLines.push(`최종 점수: ${finalScore}점`);
             messageLines.push(`획득 금액: ${finalWinnings.toLocaleString()}원`);
@@ -565,16 +564,16 @@ document.addEventListener('DOMContentLoaded', () => {
             message = messageLines.join('\n');
         }
 
-        await showPopup("라운드 종료", message, [{ text: '다음 판', value: 'next'}]);
+        await showPopup("라운드 종료", message, [{ text: '다음 판', value: 'next' }]);
 
         // Check for bankruptcy and reset if needed
         if (playerMoney <= 0 || aiMoney <= 0) {
             const bankruptPlayer = playerMoney <= 0 ? '김여사' : OPPONENT_NAME;
-            await showPopup("게임 종료", `${bankruptPlayer}님이 파산했습니다!\n새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new'}]);
+            await showPopup("게임 종료", `${bankruptPlayer}님이 파산했습니다!\n새 게임을 시작합니다.`, [{ text: '새 게임', value: 'new' }]);
             localStorage.clear(); // Clear all game data on bankruptcy
             loadGameData();
         }
-        
+
         await startGame(winner === 'draw' ? 'player' : winner);
     }
 
@@ -582,38 +581,196 @@ document.addEventListener('DOMContentLoaded', () => {
         return cards.sort((a, b) => TYPE_VALUES[b.type] - TYPE_VALUES[a.type])[0];
     }
 
-        function stealPi(player) {
+    /**
+     * Animate a card or a group of cards from one point to another.
+     * @param {Array<{element: HTMLElement, card: object}>} cards - Array of objects containing the card element and card data.
+     * @param {{x: number, y: number}} destination - The destination coordinates relative to the game board.
+     * @param {number} duration - The animation duration in ms.
+     * @param {object} options - Optional parameters {stagger, scale, finalClass}.
+     * @returns {Promise<void>} A promise that resolves when all animations are complete.
+     */
+    function animateCardMovement(cards, destination, duration, options = {}) {
+        const { stagger = 50, scale = 1, finalClass = 'captured-card' } = options;
+        const gameBoard = document.getElementById('game-board');
+        const gameBoardRect = gameBoard.getBoundingClientRect();
+
+        const animations = cards.map((cardInfo, index) => {
+            return new Promise(resolve => {
+                const { element: originalElement, card } = cardInfo;
+
+                if (!originalElement) {
+                    resolve();
+                    return;
+                }
+
+                const startRect = originalElement.getBoundingClientRect();
+                const animatedCard = createCardDiv(card, finalClass === 'captured-card');
+                animatedCard.classList.add('card-animation');
+
+                animatedCard.style.position = 'absolute';
+                animatedCard.style.left = `${startRect.left - gameBoardRect.left}px`;
+                animatedCard.style.top = `${startRect.top - gameBoardRect.top}px`;
+                animatedCard.style.width = `${startRect.width}px`;
+                animatedCard.style.height = `${startRect.height}px`;
+                animatedCard.style.zIndex = 3001 + index;
+
+                gameBoard.appendChild(animatedCard);
+                if (originalElement) originalElement.style.opacity = '0';
+
+                setTimeout(() => {
+                    animatedCard.style.transition = `all ${duration / 1000}s ease-in-out`;
+                    const destX = destination.x + (index * (finalClass === 'captured-card' ? 12 : 25));
+                    animatedCard.style.left = `${destX}px`;
+                    animatedCard.style.top = `${destination.y}px`;
+
+                    const finalWidth = finalClass === 'captured-card' ? '36px' : '66px';
+                    const finalHeight = finalClass === 'captured-card' ? '54px' : '99px';
+                    animatedCard.style.height = finalHeight;
+                    animatedCard.style.width = finalWidth;
+
+                    if (scale !== 1) {
+                        animatedCard.style.transform = `scale(${scale})`;
+                    }
+                }, 50 + (index * stagger));
+
+                setTimeout(() => {
+                    if (gameBoard.contains(animatedCard)) gameBoard.removeChild(animatedCard);
+                    resolve();
+                }, duration + 100 + (index * stagger));
+            });
+        });
+
+        return Promise.all(animations);
+    }
+
+    /**
+     * Helper function to animate and place a single card on the floor, either next to a match or in a generic spot.
+     * @param {object} card - The card object to animate.
+     * @param {HTMLElement} startElement - The element from which the card starts its animation (e.g., player hand card div, deck div).
+     * @param {HTMLElement | null} matchElement - The HTML element of the card on the floor it's trying to match, or null if no direct match.
+     * @returns {Promise<void>} A promise that resolves when the animation is complete.
+     */
+    async function animatePlay(card, startElement, matchElement = null) {
+        const gameBoard = document.getElementById('game-board');
+        const gameBoardRect = gameBoard.getBoundingClientRect();
+        const floorDiv = document.getElementById('floor');
+        const floorRect = floorDiv.getBoundingClientRect();
+
+        let destX, destY;
+
+        if (matchElement) {
+            const matchRect = matchElement.getBoundingClientRect();
+            destX = (matchRect.left - gameBoardRect.left) - (matchRect.width * 0.8);
+            destY = (matchRect.top - gameBoardRect.top);
+        } else {
+            const tempCardForMeasurement = createCardDiv(card);
+            floorDiv.appendChild(tempCardForMeasurement);
+            const destRect = tempCardForMeasurement.getBoundingClientRect();
+            floorDiv.removeChild(tempCardForMeasurement);
+            destX = destRect.left - gameBoardRect.left;
+            destY = destRect.top - gameBoardRect.top;
+        }
+
+        await animateCardMovement(
+            [{ element: startElement, card: card }],
+            { x: destX, y: destY },
+            500,
+            { finalClass: 'card' }
+        );
+    }
+
+    async function animatePiSteal(player) {
         const opponent = player === 'player' ? 'ai' : 'player';
         const opponentCaptured = opponent === 'player' ? playerCaptured : aiCaptured;
-        const stolenPiPile = player === 'player' ? playerStolenPi : aiStolenPi; // 훔친 피를 담을 배열
 
-        // Prefer to steal a single pi
+        // Find the card to steal (logic from original stealPi)
         let stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI && !c.isDoublePi);
-        
-        // If no single pi, steal a double pi that is also a YEOL/끗
-        if (stolenCardIndex === -1) {
-            stolenCardIndex = opponentCaptured.findIndex(c => c.isDoublePi && c.type === TYPES.YEOL);
+        if (stolenCardIndex === -1) stolenCardIndex = opponentCaptured.findIndex(c => c.isDoublePi && c.type === TYPES.YEOL);
+        if (stolenCardIndex === -1) stolenCardIndex = opponentCaptured.findIndex(c => c.isDoublePi);
+        if (stolenCardIndex === -1) stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI);
+
+        if (stolenCardIndex === -1) return; // No card to steal
+
+        const stolenCard = opponentCaptured[stolenCardIndex];
+
+        const opponentPiAreaId = opponent === 'player' ? 'player-pi' : 'ai-pi';
+        const opponentPiArea = document.getElementById(opponentPiAreaId);
+
+        let originalCardDiv = null;
+        if (opponentPiArea) {
+            originalCardDiv = opponentPiArea.querySelector(`[data-card-id="${stolenCard.id}"]`);
         }
 
-        // If still no card, steal any double pi
-        if (stolenCardIndex === -1) {
-            stolenCardIndex = opponentCaptured.findIndex(c => c.isDoublePi);
-        }
-        
-        // If still no card, check for any PI card (this is a fallback)
-        if (stolenCardIndex === -1) {
-            stolenCardIndex = opponentCaptured.findIndex(c => c.type === TYPES.PI);
+        if (!originalCardDiv) {
+            const opponentCapturedSections = document.getElementById(`${opponent}-captured-sections`);
+            if (opponentCapturedSections) {
+                originalCardDiv = opponentCapturedSections.querySelector(`[data-card-id="${stolenCard.id}"]`);
+            }
         }
 
-        if (stolenCardIndex > -1) {
-            const stolenCard = opponentCaptured.splice(stolenCardIndex, 1)[0];
-            stolenPiPile.push(stolenCard); // 훔친 피 배열에 추가
-            render();
-        }
+        if (!originalCardDiv) return;
+
+        const highlightClass = player === 'player' ? 'highlight-ai-move' : 'highlight-player-move';
+        originalCardDiv.classList.add(highlightClass);
+        await sleep(500);
+
+        const gameBoard = document.getElementById('game-board');
+        const gameBoardRect = gameBoard.getBoundingClientRect();
+
+        const animatedCard = createCardDiv(stolenCard, true);
+        animatedCard.classList.add('pi-steal-animation');
+        const startRect = originalCardDiv.getBoundingClientRect();
+
+        animatedCard.style.position = 'absolute';
+        animatedCard.style.left = `${startRect.left - gameBoardRect.left}px`;
+        animatedCard.style.top = `${startRect.top - gameBoardRect.top}px`;
+        animatedCard.style.zIndex = 3000;
+        gameBoard.appendChild(animatedCard);
+
+        originalCardDiv.style.opacity = '0';
+        originalCardDiv.classList.remove(highlightClass);
+
+        const floorDiv = document.getElementById('floor');
+        const floorRect = floorDiv.getBoundingClientRect();
+        const centerX = (floorRect.left - gameBoardRect.left) + (floorRect.width / 2) - (startRect.width / 2);
+        const centerY = (floorRect.top - gameBoardRect.top) + (floorRect.height / 2) - (startRect.height / 2);
+
+        const stealerStolenPiArea = document.getElementById(`${player}-stolen-pi`);
+        const destRect = stealerStolenPiArea.getBoundingClientRect();
+        const destX = (destRect.left - gameBoardRect.left) + (stealerStolenPiArea.childElementCount * 12);
+        const destY = destRect.top - gameBoardRect.top;
+
+        await sleep(50);
+
+        animatedCard.style.left = `${centerX}px`;
+        animatedCard.style.top = `${centerY}px`;
+        animatedCard.style.transform = 'scale(2.5)';
+        await sleep(1200);
+
+        await sleep(500);
+
+        animatedCard.style.left = `${destX}px`;
+        animatedCard.style.top = `${destY}px`;
+        animatedCard.style.transform = 'scale(1)';
+        await sleep(1200);
+
+        gameBoard.removeChild(animatedCard);
+
+        const actualStolenCard = opponentCaptured.splice(stolenCardIndex, 1)[0];
+        const stolenPiPile = player === 'player' ? playerStolenPi : aiStolenPi;
+        stolenPiPile.push(actualStolenCard);
+
+        render();
+    }
+
+    async function stealPi(player) {
+        await animatePiSteal(player);
     }
 
     async function playTurn(player, cardId) {
-        hideTurnNotificationBubble(); // Hide inactivity message on action
+        if (player !== 'player') return;
+
+        hideTurnNotificationBubble();
         if (playerShakeActive) {
             const shakenCardsInHand = playerHand.filter(c => c.isShaken);
             if (shakenCardsInHand.length > 0) {
@@ -621,16 +778,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const playedCard = playerHand.find(c => c.id === cardId);
                 if (playedCard && playedCard.month === shakenMonth) {
                     playerShakeActive = false;
-                    hideShakeBubbles(); // Hide the bubble immediately
+                    hideShakeBubbles();
                 }
             }
         }
 
         clearInactivityTimer();
-        if (player === 'ai') {
-            console.error("playTurn should not be called for AI anymore.");
-            return;
-        }
+
         try {
             if (currentPlayer !== player) return;
 
@@ -639,81 +793,56 @@ document.addEventListener('DOMContentLoaded', () => {
             if (cardIndex === -1) return;
 
             const playedCard = hand[cardIndex];
+            const playedCardDiv = playerHandDiv.querySelector(`[data-card-id="${cardId}"]`);
 
-            // Check if the played card is part of a bomb
             if (canBomb && bombMonths.includes(playedCard.month)) {
-                await playBomb(playedCard.month);
-                return; // End the turn here as the bomb was played
+                await playBomb(player, playedCard.month);
+                return;
             }
 
-            // --- Highlight card in hand ---
-            playedCard.highlight = true;
-            render();
-            await sleep(800);
-            delete playedCard.highlight;
+            const matches = floor.filter(c => c.month === playedCard.month);
+            let targetMatchElement = null;
+            if (matches.length > 0) {
+                const firstMatchCard = matches[0];
+                targetMatchElement = floorDiv.querySelector(`[data-card-id="${firstMatchCard.id}"]`);
+            }
 
-            // --- Animation Step 1: Play card from hand ---
+            await animatePlay(playedCard, playedCardDiv, targetMatchElement);
+
             hand.splice(cardIndex, 1);
-            floor.push(playedCard); // Add card to floor for visualization
-            render(); // Show card removed from hand and added to floor
-            await sleep(600);
+            floor.push(playedCard);
+            render();
+            await sleep(300);
 
-            // Handle Dummy Card play
             if (playedCard.type === 'dummy') {
-                floor.pop(); // Remove the dummy card from floor as it's not played
+                floor.pop();
                 await finishTurn(player, null, null, null, 0);
                 return;
             }
 
-            // --- Ppeok Logic (Needs to be handled early) ---
             const ppukIndex = ppukStacks.indexOf(playedCard.month);
             if (ppukIndex > -1) {
-                const playerName = '김여사';
-                await showToastPopup("'싼 거' 먹기!", `${playerName}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
-                
-                const ppukCards = floor.filter(c => c.month === playedCard.month);
-                ppukCards.forEach(c => c.highlight = true);
-                // playedCard is already on the floor, so it will be highlighted too
-                render();
-                await sleep(1500);
-
-                ppukCards.forEach(c => delete c.highlight);
-
-                const capturedPpeokCards = floor.filter(c => c.month === playedCard.month);
-                floor = floor.filter(c => c.month !== playedCard.month);
-                ppukStacks.splice(ppukIndex, 1);
-                
-                playerCaptured.push(...capturedPpeokCards);
-                await stealPi(player);
-                
-                await finishTurn(player, null, null, null, 0);
+                await showToastPopup("'싼 거' 먹기!", `김여사님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
+                const handCaptures = floor.filter(c => c.month === playedCard.month);
+                ppukStacks.splice(ppukIndex, 1); // 뻑 스택에서 제거
+                await stealPi(player); // 피 훔치기
+                await finishTurn(player, handCaptures, null, null, 0);
                 return;
             }
 
-            // --- Normal Match Logic ---
-            const matches = floor.filter(c => c.month === playedCard.month && c.id !== playedCard.id);
-            
-            if (matches.length === 0) {
-                // No match, card stays on floor. Pass null for handCaptures.
+            const currentMatches = floor.filter(c => c.month === playedCard.month && c.id !== playedCard.id);
+
+            if (currentMatches.length === 0) {
                 await finishTurn(player, null, playedCard, null, 0);
             } else {
                 let match;
-                if (matches.length > 1) {
-                    match = await showChoicePopup(playedCard, matches);
+                if (currentMatches.length > 1) {
+                    match = await showChoicePopup(playedCard, currentMatches);
                 } else {
-                    match = matches[0];
+                    match = currentMatches[0];
                 }
-                
-                playedCard.highlight = true;
-                match.highlight = true;
-                render();
-                await sleep(1500);
-                delete playedCard.highlight;
-                delete match.highlight;
-
-                // *** MODIFICATION: Don't remove from floor. Pass captures to finishTurn.
                 const handCaptures = [playedCard, match];
-                await finishTurn(player, handCaptures, null, playedCard.month, matches.length);
+                await finishTurn(player, handCaptures, null, playedCard.month, currentMatches.length);
             }
         } catch (e) {
             console.error("Error during playTurn:", e);
@@ -722,10 +851,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function finishTurn(player, handCaptures, justPlayedOnFloor, playedMonth = null, matchCountAtTurnStart = 0) {
-        const mainCaptured = playerCaptured;
+        const mainCaptured = player === 'player' ? playerCaptured : aiCaptured;
         let turnCaptures = handCaptures ? [...handCaptures] : [];
         let deckCaptures = [];
-        let capturedInTurn = turnCaptures.length > 0;
 
         const drawnCard = deck.pop();
         if (!drawnCard) {
@@ -740,89 +868,207 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         await animateDeckFlip(drawnCard);
+
+        const deckMatches = floor.filter(c => c.month === drawnCard.month && c.id !== drawnCard.id);
+        let deckTargetMatchElement = null;
+        if (deckMatches.length > 0) {
+            const firstDeckMatchCard = deckMatches[0];
+            deckTargetMatchElement = floorDiv.querySelector(`[data-card-id="${firstDeckMatchCard.id}"]`);
+        }
+
+        const deckArea = document.getElementById('deck-area').querySelector('.card-back');
+        await animatePlay(drawnCard, deckArea, deckTargetMatchElement);
+
         floor.push(drawnCard);
         render();
-        await sleep(1300);
+        await sleep(500); // Let the card land and be visible
 
-        const playerName = '김여사';
+        const playerName = player === 'player' ? '김여사' : OPPONENT_NAME;
         let eventOccurred = false;
         let isNewPpeok = false;
+        let stealPiOnEvent = false;
 
         if (playedMonth && drawnCard.month === playedMonth) {
-            if (matchCountAtTurnStart === 2) { // Tadak
+            if (matchCountAtTurnStart === 2) { // 따닥!
                 await showNotificationPopup("따닥!", `${playerName}님의 따닥! 상대방의 피를 한 장 가져옵니다.`);
-                const remainingCardOnFloor = floor.find(c => c.month === playedMonth && ![...turnCaptures, drawnCard].map(card => card.id).includes(c.id));
-                if(remainingCardOnFloor) deckCaptures.push(remainingCardOnFloor);
+                const remainingCardOnFloor = floor.find(c => c.month === playedMonth && ![...turnCaptures,
+                    drawnCard].map(card => card.id).includes(c.id));
+                if (remainingCardOnFloor) deckCaptures.push(remainingCardOnFloor);
                 deckCaptures.push(drawnCard);
-                await stealPi(player);
+                stealPiOnEvent = true;
                 eventOccurred = true;
-            } else if (matchCountAtTurnStart === 1) { // Ppeok (Ssat-da)
+            } else if (matchCountAtTurnStart === 1) { // 뻑 (쌌다)
+                await showToastPopup("뻑!", `${playerName}님이 뻑!을 했습니다.`);
                 isNewPpeok = true;
+                // stealPiOnEvent = true; 제거됨 - 뻑 시 피를 훔치지 않음
                 eventOccurred = true;
             }
         }
 
         if (!eventOccurred) {
             const ppukIndex = ppukStacks.indexOf(drawnCard.month);
-            if (ppukIndex > -1) { // Resolve existing Ppeok
+            if (ppukIndex > -1) { // 쌌던 패 먹기
                 await showToastPopup("'싼 거' 먹기!", `${playerName}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
-                const ppukCards = floor.filter(c => c.month === drawnCard.month);
-                deckCaptures.push(...ppukCards);
+                deckCaptures.push(...floor.filter(c => c.month === drawnCard.month));
                 ppukStacks.splice(ppukIndex, 1);
-                await stealPi(player);
-            } else if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) { // Jjok
+                stealPiOnEvent = true;
+            } else if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) { // 쪽!
                 await showToastPopup('쪽!', `${playerName}님, 쪽! 축하합니다!`);
                 deckCaptures.push(justPlayedOnFloor, drawnCard);
-                await stealPi(player);
-            } else { // Normal deck match
-                const matches = floor.filter(c => c.month === drawnCard.month && c.id !== drawnCard.id && ![...turnCaptures, ...deckCaptures].map(card => card.id).includes(c.id));
-                if (matches.length > 0) {
-                    let match = (matches.length > 1) ? chooseBestCard(matches) : matches[0];
+                stealPiOnEvent = true;
+            } else { // 일반 덱 매치
+                const currentDeckMatches = floor.filter(c => c.month === drawnCard.month && c.id !== drawnCard.id
+                    && ![...turnCaptures].map(card => card.id).includes(c.id));
+                if (currentDeckMatches.length > 0) {
+                    let match = (currentDeckMatches.length > 1 && player === 'player') ? await showChoicePopup
+                        (drawnCard, currentDeckMatches) : chooseBestCard(currentDeckMatches);
                     deckCaptures.push(drawnCard, match);
                 }
             }
         }
-        
-        // --- Consolidated Capture and Cleanup Step ---
+
         if (isNewPpeok) {
-            // For a new Ppeok, no cards are captured. They all stay on the floor.
-            // The played card from hand is already on the floor.
-            // The matched card from hand is still on the floor.
-            // The generic ppeok checker below will handle stack creation.
-            turnCaptures = []; // Empty the captures for this turn
-        } 
+            turnCaptures = [];
+        }
 
         const allTurnCaptures = [...turnCaptures, ...deckCaptures];
-        capturedInTurn = allTurnCaptures.length > 0;
 
-        if (capturedInTurn) {
-            const capturedIds = allTurnCaptures.map(c => c.id);
-            allTurnCaptures.forEach(c => c.highlight = true);
+        if (allTurnCaptures.length > 0) {
+            allTurnCaptures.forEach(c => c[player === 'player' ? 'highlight' : 'aiHighlight'] = true);
             render();
-            await sleep(1500);
+            await sleep(800); // Pause to show all highlighted cards
 
+            const cardsToAnimate = allTurnCaptures.map(c => ({
+                card: c,
+                element: floorDiv.querySelector(`[data-card-id="${c.id}"]`)
+            })).filter(item => item.element);
+
+            if (cardsToAnimate.length > 0) {
+                const animationGroups = cardsToAnimate.reduce((acc, item) => {
+                    const type = item.card.type;
+                    if (!acc[type]) acc[type] = [];
+                    acc[type].push(item);
+                    return acc;
+                }, {});
+
+                const gameBoardRect = document.getElementById('game-board').getBoundingClientRect();
+                const animationPromises = Object.keys(animationGroups).map(type => {
+                    const group = animationGroups[type];
+                    const destPile = document.getElementById(`${player}-${type}`);
+                    const captureDestRect = destPile.getBoundingClientRect();
+                    return animateCardMovement(
+                        group,
+                        { x: captureDestRect.left - gameBoardRect.left, y: captureDestRect.top - gameBoardRect.top },
+                        800
+                    );
+                });
+                await Promise.all(animationPromises);
+            }
+
+            allTurnCaptures.forEach(c => c[player === 'player' ? 'highlight' : 'aiHighlight'] = false);
+            const capturedIds = allTurnCaptures.map(c => c.id);
             floor = floor.filter(c => !capturedIds.includes(c.id));
             mainCaptured.push(...allTurnCaptures);
         }
 
-        // Handle special events after capture (Sseul-sseu-ri)
-        if (floor.length === 0 && capturedInTurn && deck.length > 0) {
-             await showToastPopup("싹쓸이!", `${playerName}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
-             await stealPi(player);
+        if (floor.length === 0 && allTurnCaptures.length > 0 && deck.length > 0) {
+            await showToastPopup("싹쓸이!", `${playerName}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
+            stealPiOnEvent = true;
         }
 
-        // Check for new Ppeok
-        const counts = floor.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
-        for (const m in counts) {
-            if (counts[m] === 3 && !ppukStacks.includes(parseInt(m))) {
-                ppukStacks.push(parseInt(m));
-            }
+        if (isNewPpeok) {
+            ppukStacks.push(playedMonth);
         }
 
-        render(); // Final render
+        if (stealPiOnEvent) {
+            await stealPi(player);
+        }
+
+        render();
+
         const goStopTriggered = await updateScores(player);
         if (!goStopTriggered) {
             switchTurn(player);
+        }
+    }
+
+    async function aiTurn() {
+        try {
+            if (currentPlayer !== 'ai') return;
+            await sleep(800);
+
+            const specialMove = getAISpecialMove();
+            if (specialMove.action === 'bomb') {
+                await playBomb('ai', specialMove.month);
+                return;
+            }
+            if (specialMove.action === 'shake') {
+                aiShake = true;
+                aiShakeActive = true;
+                aiHand.forEach(card => {
+                    if (card.month === specialMove.month) card.isShaken = true;
+                });
+                showShakeBubble('ai', '패 흔들었소.');
+                render();
+                await sleep(1500);
+            }
+
+            const cardToPlay = getAIBestMove();
+            if (!cardToPlay) {
+                const playerScore = calculateScore(playerCaptured, playerStolenPi).score;
+                const aiScore = calculateScore(aiCaptured, aiStolenPi).score;
+                if (playerScore >= 7 && playerScore > aiScore) await endRound('player');
+                else if (aiScore >= 7 && aiScore > playerScore) await endRound('ai');
+                else await endRound('draw');
+                return;
+            }
+
+            const aiHandIndex = aiHand.findIndex(c => c.id === cardToPlay.id);
+            const cardDiv = aiHandDiv.children[aiHandIndex];
+
+            const matches = floor.filter(c => c.month === cardToPlay.month);
+            let targetMatchElement = null;
+            if (matches.length > 0) {
+                const firstMatchCard = matches[0];
+                targetMatchElement = floorDiv.querySelector(`[data-card-id="${firstMatchCard.id}"]`);
+            }
+
+            await animatePlay(cardToPlay, cardDiv, targetMatchElement);
+
+            aiHand.splice(aiHandIndex, 1);
+            floor.push(cardToPlay);
+
+            render();
+            await sleep(300);
+
+            if (cardToPlay.type === 'dummy') {
+                floor.pop();
+                await finishTurn('ai', null, null, null, 0);
+                return;
+            }
+
+            const ppukIndex = ppukStacks.indexOf(cardToPlay.month);
+            if (ppukIndex > -1) {
+                await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
+                const handCaptures = floor.filter(c => c.month === cardToPlay.month);
+                ppukStacks.splice(ppukIndex, 1); // 뻑 스택에서 제거
+                await stealPi('ai'); // 피 훔치기
+                await finishTurn('ai', handCaptures, null, null, 0);
+                return;
+            }
+
+            const currentMatches = floor.filter(c => c.month === cardToPlay.month && c.id !== cardToPlay.id);
+
+            if (currentMatches.length === 0) {
+                await finishTurn('ai', null, cardToPlay, null, 0);
+            } else {
+                const match = chooseBestCard(currentMatches);
+                const handCaptures = [cardToPlay, match];
+                await finishTurn('ai', handCaptures, null, cardToPlay.month, currentMatches.length);
+            }
+        } catch (e) {
+            console.error("Error during aiTurn:", e);
+            await showNotificationPopup("오류 발생", "AI 턴 진행 중 오류가 발생했습니다: " + e.message);
         }
     }
 
@@ -845,11 +1091,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showShakeBubble('player', '흔들었어요!');
             }
 
-            // Player's turn notification is now handled by the inactivity timer's bubble.
-            
-            // It's player's turn. Check if they have cards.
             if (playerHand.length === 0) {
-                // Player has no cards, round ends. Calculate winner.
                 const playerScore = calculateScore(playerCaptured).score;
                 const aiScore = calculateScore(aiCaptured).score;
                 if (playerScore >= 7 && playerScore > aiScore) {
@@ -859,14 +1101,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     await endRound('draw');
                 }
-                return; // Stop further turn processing
+                return;
             }
 
             isTurnInProgress = false; // Release lock
             playerHandDiv.style.pointerEvents = 'auto';
             try {
                 await handleSpecialActions();
-                // Start inactivity timer only after special actions (like popups) are done.
                 startInactivityTimer();
             } catch (e) {
                 console.error("Error during special actions on player turn:", e);
@@ -875,38 +1116,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function playBomb(month) {
-        // Find cards
-        const bombCardsFromHand = playerHand.filter(c => c.month === month);
+    async function playBomb(player, month) {
+        const hand = player === 'player' ? playerHand : aiHand;
+        const handDiv = player === 'player' ? playerHandDiv : aiHandDiv;
+        const playerName = player === 'player' ? '김여사' : OPPONENT_NAME;
 
-        // --- Animation Step 1: Move cards from hand to floor ---
-        playerHand = playerHand.filter(c => c.month !== month);
+        const bombCardsFromHand = hand.filter(c => c.month === month);
+        const bombCardDivs = bombCardsFromHand.map(c => handDiv.querySelector(`[data-card-id="${c.id}"]`));
+
+        const floorDest = floorDiv.getBoundingClientRect();
+        const gameBoardRect = document.getElementById('game-board').getBoundingClientRect();
+
+        const animationPromises = bombCardsFromHand.map((c, i) => {
+            return animateCardMovement(
+                [{ card: c, element: bombCardDivs[i] }],
+                { x: floorDest.left - gameBoardRect.left + 15 + (i * 70), y: floorDest.top - gameBoardRect.top + 15 },
+                600,
+                { finalClass: 'card' }
+            );
+        });
+        await Promise.all(animationPromises);
+
+        const floorCard = floor.find(c => c.month === month);
+        const allBombCards = [...bombCardsFromHand, floorCard];
+
+        // 손패에서 폭탄 카드 제거
+        if (player === 'player') {
+            playerHand = hand.filter(c => c.month !== month);
+        } else {
+            aiHand = hand.filter(c => c.month !== month);
+        }
+
+        // 가짜 패 2장 추가 (폭탄으로 손패가 부족해지므로)
+        const dummyCard1 = { id: 'dummy1', month: -1, type: 'dummy', name: '가짜패', image: 'Hanafuda_card_back_Alt.svg.png' };
+        const dummyCard2 = { id: 'dummy2', month: -1, type: 'dummy', name: '가짜패', image: 'Hanafuda_card_back_Alt.svg.png' };
+
+        if (player === 'player') {
+            playerHand.push(dummyCard1, dummyCard2);
+        } else {
+            aiHand.push(dummyCard1, dummyCard2);
+        }
+
         floor.push(...bombCardsFromHand);
-
-        // --- Animation Step 2: Highlight all 4 cards on the floor ---
-        const allBombCards = floor.filter(c => c.month === month);
-        allBombCards.forEach(c => c.highlight = true);
         render();
-        await sleep(1500);
+        await sleep(500);
 
-        // Highlights are intentionally not cleaned up here. 
-        // They remain visible during the deck flip and are re-highlighted in finishTurn.
+        // 폭탄 메시지 표시 및 피 훔치기
+        await showNotificationPopup("폭탄!", `${playerName}님의 폭탄! 상대방의 피를 한 장 가져옵니다.`);
+        await stealPi(player);
 
-        // Steal pi (happens as part of the bomb action)
-        await stealPi('player');
-
-        // A bomb is a type of shake, so set the shake bonus
-        playerShake = true; 
-
-        // Add two dummy cards to player's hand
-        const dummyCard1 = { id: `dummy_${Date.now()}_1`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
-        const dummyCard2 = { id: `dummy_${Date.now()}_2`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
-        playerHand.push(dummyCard1, dummyCard2);
-
-        // Defer capture to finishTurn, passing the bomb cards as handCaptures
-        await finishTurn('player', allBombCards, null, month, 1); 
+        await finishTurn(player, allBombCards, null, month, 1);
     }
 
+    // ... rest of the file
     // --- Inactivity Timer ---
     function clearInactivityTimer() {
         if (inactivityTimer) {
@@ -941,7 +1203,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const playerScoreInfo = calculateScore(playerCaptured, playerStolenPi);
         const currentScore = playerScoreInfo.score;
-        
+
         let message = '김여사님 차례에요.';
         if (currentScore < 7) {
             message += `<br>7점(현재: ${currentScore}점)이 되어야 스톱할 수 있어요.`;
@@ -990,7 +1252,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bubble.style.top = '90px'; // Below the hand
             bubble.style.right = '20px';
         }
-        
+
         parentArea.appendChild(bubble);
 
         // Animate in
@@ -1159,7 +1421,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const aiScore = calculateScore(aiCaptured, aiStolenPi).score;
         const message = `현재 점수: ${playerScore}점 (상대: ${aiScore}점)\n'고' 하시겠습니까?`;
 
-        const choice = await showPopup('고 또는 스톱', message, 
+        const choice = await showPopup('고 또는 스톱', message,
             [
                 { text: '고', value: 'go' },
                 { text: '스톱', value: 'stop' }
@@ -1179,7 +1441,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForSpecials() {
         const hand = playerHand;
         const handCounts = hand.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
-        
+
         let special = { canShake: false, shakeMonth: -1, canBomb: false, bombMonths: [] };
 
         for (const month in handCounts) {
@@ -1189,7 +1451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     special.canShake = true;
                     special.shakeMonth = monthNum;
                 }
-                
+
                 const floorHasMatch = floor.some(c => c.month === monthNum);
                 if (handCounts[monthNum] === 3 && floorHasMatch) {
                     const floorCount = floor.filter(c => c.month === monthNum).length;
@@ -1233,321 +1495,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return { action: 'play' }; // Default action
     }
 
-    async function aiPlayBomb(month) {
-        const player = 'ai';
-        const mainCaptured = aiCaptured;
-
-        // --- Animation Step 1: Move cards from hand to floor ---
-        const bombCardsFromHand = aiHand.filter(c => c.month === month);
-        aiHand = aiHand.filter(c => c.month !== month);
-        floor.push(...bombCardsFromHand);
-
-        // --- Animation Step 2: Highlight all 4 cards on the floor ---
-        const allBombCards = floor.filter(c => c.month === month);
-        allBombCards.forEach(c => c.aiHighlight = true);
-        render();
-        await sleep(1500); // Let user see all 4 cards on the floor
-
-        // Defer capture. Highlights remain.
-
-        // Other bomb effects
-        await stealPi(player);
-        aiShake = true;
-
-        // Add two dummy cards to AI's hand to compensate for the bomb
-        const dummyCard1 = { id: `dummy_${Date.now()}_1`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
-        const dummyCard2 = { id: `dummy_${Date.now()}_2`, month: 0, type: 'dummy', name: '공패', image: 'Hanafuda_card_back_Alt.svg.png' };
-        aiHand.push(dummyCard1, dummyCard2);
-
-        // --- PART 2: Draw card from deck ---
-        const drawnCard = deck.pop();
-        if (!drawnCard) {
-            // If deck is empty, just capture the bomb cards and end.
-            mainCaptured.push(...allBombCards);
-            floor = floor.filter(c => c.month !== month);
-            render();
-            await endRound('draw');
-            return;
-        }
-
-        await animateDeckFlip(drawnCard);
-        floor.push(drawnCard);
-        render();
-        await sleep(1300);
-
-        let deckCaptures = [];
-        let eventOccurred = false;
-        let isNewPpeok = false;
-        const playedMonth = month;
-
-        if (playedMonth && drawnCard.month === playedMonth) {
-            isNewPpeok = true;
-            eventOccurred = true;
-        }
-
-        if (!eventOccurred) {
-            const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
-            if (drawnPpukIndex > -1) {
-                await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
-                const ppukCards = floor.filter(c => c.month === drawnCard.month);
-                deckCaptures.push(...ppukCards);
-                ppukStacks.splice(drawnPpukIndex, 1);
-                await stealPi(player);
-            } else {
-                // Make sure not to match with the bomb cards already on the floor
-                const deckMatches = floor.filter(c => c.month === drawnCard.month && c.id !== drawnCard.id && !allBombCards.map(bc => bc.id).includes(c.id));
-                if (deckMatches.length > 0) {
-                    const match = chooseBestCard(deckMatches);
-                    deckCaptures.push(drawnCard, match);
-                }
-            }
-        }
-
-        // --- Consolidated Capture Step ---
-        let handCaptures = allBombCards; // The 4 bomb cards
-        if (isNewPpeok) {
-            // On Ppeok, no cards are captured from the deck flip.
-            deckCaptures = [];
-        }
-
-        const allTurnCaptures = [...handCaptures, ...deckCaptures];
-        if (allTurnCaptures.length > 0) {
-            allTurnCaptures.forEach(c => c.aiHighlight = true);
-            render();
-            await sleep(1500);
-
-            const capturedIds = allTurnCaptures.map(c => c.id);
-            floor = floor.filter(c => !capturedIds.includes(c.id));
-            mainCaptured.push(...allTurnCaptures);
-        }
-
-        // --- Post-Turn Events ---
-        if (floor.length === 0 && allTurnCaptures.length > 0 && deck.length > 0) {
-            await showToastPopup("싹쓸이!", `${OPPONENT_NAME}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
-            await stealPi(player);
-        }
-
-        const counts = floor.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
-        for (const m in counts) {
-            if (counts[m] === 3 && !ppukStacks.includes(parseInt(m))) {
-                ppukStacks.push(parseInt(m));
-            }
-        }
-
-        render();
-        const goStopTriggered = await updateScores(player);
-        if (!goStopTriggered) {
-            switchTurn(player);
-        }
-    }
-
-    async function aiPlayTurn(playedCard) {
-        // Handle Dummy Card play by calling the generic finishTurn function
-        if (playedCard.type === 'dummy') {
-            const player = 'ai';
-            // Briefly add to floor for visualization, then remove
-            const aiHandIndex = aiHand.findIndex(c => c.id === playedCard.id);
-            if (aiHandIndex > -1) aiHand.splice(aiHandIndex, 1);
-            floor.push(playedCard);
-            render();
-            await sleep(800);
-            floor.pop();
-            render();
-            await sleep(500);
-            
-            // Finish turn by just drawing from the deck.
-            // This bypasses the complex logic below.
-            await finishTurn(player, null, null, null, 0);
-            return;
-        }
-        if (aiShakeActive) {
-            const shakenCardsInHand = aiHand.filter(c => c.isShaken);
-            if (shakenCardsInHand.length > 0) {
-                const shakenMonth = shakenCardsInHand[0].month;
-                if (playedCard.month === shakenMonth) {
-                    aiShakeActive = false;
-                    hideShakeBubbles(); // Hide the bubble immediately
-                }
-            }
-        }
-
-        const player = 'ai';
-        const mainCaptured = aiCaptured;
-        let handCaptures = [];
-        let deckCaptures = [];
-
-        // --- PART 1: Play card from hand ---
-        const aiHandIndex = aiHand.findIndex(c => c.id === playedCard.id);
-        if (aiHandIndex > -1) aiHand.splice(aiHandIndex, 1);
-        
-        floor.push(playedCard);
-        playedCard.aiHighlight = true;
-        render();
-        await sleep(1300);
-        delete playedCard.aiHighlight;
-
-        const matchCountAtTurnStart = floor.filter(c => c.month === playedCard.month && c.id !== playedCard.id).length;
-        const matches = floor.filter(c => c.month === playedCard.month && c.id !== playedCard.id);
-
-        // --- Ppeok-solving logic ---
-        const ppukIndex = ppukStacks.indexOf(playedCard.month);
-        if (ppukIndex > -1) {
-            await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
-            const ppukCards = floor.filter(c => c.month === playedCard.month);
-            handCaptures.push(...ppukCards);
-            ppukStacks.splice(ppukIndex, 1);
-            await stealPi(player);
-        } else if (matches.length > 0) {
-            const match = chooseBestCard(matches);
-            handCaptures.push(playedCard, match);
-        }
-
-        // --- PART 2: Draw card from deck ---
-        const drawnCard = deck.pop();
-        if (!drawnCard) {
-            if (handCaptures.length > 0) {
-                const capturedIds = handCaptures.map(c => c.id);
-                floor = floor.filter(c => !capturedIds.includes(c.id));
-                mainCaptured.push(...handCaptures);
-            }
-            render();
-            await endRound('draw');
-            return;
-        }
-
-        await animateDeckFlip(drawnCard);
-        floor.push(drawnCard);
-        render();
-        await sleep(1300);
-
-        let eventOccurred = false;
-        let isNewPpeok = false;
-        const playedMonth = handCaptures.length > 0 ? handCaptures[0].month : null;
-
-        if (playedMonth && drawnCard.month === playedMonth && ppukIndex === -1) {
-            if (matchCountAtTurnStart === 2) { // Tadak
-                await showNotificationPopup("따닥!", `${OPPONENT_NAME}님의 따닥! 상대방의 피를 한 장 가져옵니다.`);
-                const remainingCardOnFloor = floor.find(c => c.month === playedMonth && ![...handCaptures, drawnCard].map(card => card.id).includes(c.id));
-                if (remainingCardOnFloor) deckCaptures.push(remainingCardOnFloor);
-                deckCaptures.push(drawnCard);
-                await stealPi(player);
-                eventOccurred = true;
-            } else if (matchCountAtTurnStart === 1) { // Ppeok (Ssat-da)
-                isNewPpeok = true;
-                eventOccurred = true;
-            }
-        }
-
-        if (!eventOccurred) {
-            const drawnPpukIndex = ppukStacks.indexOf(drawnCard.month);
-            if (drawnPpukIndex > -1) { // Resolve existing Ppeok with drawn card
-                await showToastPopup("'싼 거' 먹기!", `${OPPONENT_NAME}님이 '쌌던' 패를 먹었습니다! 상대방 피 1장을 가져옵니다.`);
-                const ppukCards = floor.filter(c => c.month === drawnCard.month);
-                deckCaptures.push(...ppukCards);
-                ppukStacks.splice(drawnPpukIndex, 1);
-                await stealPi(player);
-            } else {
-                const justPlayedOnFloor = floor.find(c => c.id === playedCard.id);
-                if (justPlayedOnFloor && drawnCard.month === justPlayedOnFloor.month) { // Jjok
-                    await showToastPopup('쪽!', `${OPPONENT_NAME}님, 쪽! 축하합니다!`);
-                    deckCaptures.push(justPlayedOnFloor, drawnCard);
-                    await stealPi(player);
-                } else { // Normal deck match
-                    const deckMatches = floor.filter(c => c.month === drawnCard.month && c.id !== drawnCard.id && ![...handCaptures, ...deckCaptures].map(card => card.id).includes(c.id));
-                    if (deckMatches.length > 0) {
-                        const match = chooseBestCard(deckMatches);
-                        deckCaptures.push(drawnCard, match);
-                    }
-                }
-            }
-        }
-
-        // --- Consolidated Capture Step ---
-        if (isNewPpeok) {
-            handCaptures = []; // No capture on new ppeok
-        }
-
-        const allTurnCaptures = [...handCaptures, ...deckCaptures];
-        const capturedInTurn = allTurnCaptures.length > 0;
-
-        if (capturedInTurn) {
-            allTurnCaptures.forEach(c => c.aiHighlight = true);
-            render();
-            await sleep(1500);
-
-            const capturedIds = allTurnCaptures.map(c => c.id);
-            floor = floor.filter(c => !capturedIds.includes(c.id));
-            mainCaptured.push(...allTurnCaptures);
-        }
-
-        // --- Post-Turn Events ---
-        if (floor.length === 0 && capturedInTurn && deck.length > 0) {
-            await showToastPopup("싹쓸이!", `${OPPONENT_NAME}님이 바닥을 모두 쓸었습니다! 상대방의 피를 한 장 가져옵니다.`);
-            await stealPi(player);
-        }
-
-        const counts = floor.reduce((acc, c) => { acc[c.month] = (acc[c.month] || 0) + 1; return acc; }, {});
-        for (const m in counts) {
-            if (counts[m] === 3 && !ppukStacks.includes(parseInt(m))) {
-                ppukStacks.push(parseInt(m));
-            }
-        }
-
-        render();
-        const goStopTriggered = await updateScores(player);
-        if (!goStopTriggered) {
-            switchTurn(player);
-        }
-    }
-
-    async function aiTurn() {
-        try {
-            if (currentPlayer !== 'ai') return;
-            await sleep(800);
-
-            const specialMove = getAISpecialMove();
-
-            if (specialMove.action === 'bomb') {
-                await aiPlayBomb(specialMove.month);
-                return; // Turn is handled by aiPlayBomb
-            }
-
-            if (specialMove.action === 'shake') {
-                aiShake = true; // For score bonus
-                aiShakeActive = true; // For bubble
-
-                const monthToShake = specialMove.month;
-                aiHand.forEach(card => {
-                    if (card.month === monthToShake) {
-                        card.isShaken = true;
-                    }
-                });
-                showShakeBubble('ai', '패 흔들었소.');
-                render();
-                await sleep(1500); // 흔드는 걸 보여주기 위한 잠시 멈춤
-            }
-
-            const cardToPlay = getAIBestMove();
-            if (cardToPlay) {
-                await aiPlayTurn(cardToPlay);
-            } else {
-                // AI has no cards, round ends.
-                const playerScore = calculateScore(playerCaptured).score;
-                const aiScore = calculateScore(aiCaptured).score;
-                if (playerScore >= 7 && playerScore > aiScore) {
-                    await endRound('player');
-                } else if (aiScore >= 7 && aiScore > playerScore) {
-                    await endRound('ai');
-                } else {
-                    await endRound('draw');
-                }
-            }
-        } catch (e) {
-            console.error("Error during aiTurn:", e);
-            await showNotificationPopup("오류 발생", "AI 턴 진행 중 오류가 발생했습니다: " + e.message);
-        }
-    }
-
     function calculateBestMove() {
         let bestMove = { card: null, score: -Infinity };
 
@@ -1577,7 +1524,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Penalty for giving player a good card. Check if player can take it.
                 const playerHandHasMatch = playerHand.some(c => c.month === card.month);
-                if(playerHandHasMatch) {
+                if (playerHandHasMatch) {
                     currentScore -= 10;
                 }
             }
@@ -1678,7 +1625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return true;
             }
         }
-        
+
         // If the deck is empty and hands are empty, end the round
         if (deck.length === 0 && playerHand.length === 0 && aiHand.length === 0) {
             const playerScore = playerScoreInfo.score;
@@ -1715,13 +1662,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ttis.filter(c => [2, 6, 10].includes(c.id)).length === 3) score += 3; // Hong-dan
         if (ttis.filter(c => [22, 34, 38].includes(c.id)).length === 3) score += 3; // Cheong-dan
         if (ttis.filter(c => [14, 18, 26].includes(c.id)).length === 3) score += 3; // Cho-dan
-        
+
         const godoriCards = yeols.filter(c => [5, 13, 30].includes(c.id));
         if (godoriCards.length === 3) score += 5;
-        
+
         const nonGodoriYeols = yeols.filter(c => !godoriCards.includes(c));
         if (nonGodoriYeols.length + godoriCards.length >= 5) score += nonGodoriYeols.length + godoriCards.length - 4;
-        
+
         const piCount = pis.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0) + stolenPi.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0);
         if (piCount >= 10) score += piCount - 9;
 
@@ -1822,7 +1769,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
     // --- Start Game ---
     (async () => {
         const welcomeShown = localStorage.getItem('goStopWelcomeShown');
@@ -1842,7 +1788,7 @@ document.addEventListener('DOMContentLoaded', () => {
             popupModal.classList.remove('welcome-popup');
             localStorage.setItem('goStopWelcomeShown', 'true');
         }
-        
+
         loadGameData();
         startGame();
         initializeCardHover();

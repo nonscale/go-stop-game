@@ -658,7 +658,7 @@ button:disabled {
     background-color: white;
 }
 
-/* --- Hint System Styles --- */
+/* --- Hint System Styles */
 .hint-container {
     position: absolute;
     top: -110px; /* Increased top position for even larger hint */
@@ -727,7 +727,7 @@ button:disabled {
 
 
 
-/* --- Speech Bubble for Shake Action --- */
+/* --- Speech Bubble for Shake Action */
 .speech-bubble {
     position: absolute;
     background-color: #ffc107;
@@ -764,7 +764,7 @@ button:disabled {
     border-top: 10px solid #ffc107;
 }
 
-/* --- Info Bubble for Game State --- */
+/* --- Info Bubble for Game State */
 .info-bubble {
     position: absolute;
     background-color: #007bff; /* Blue color for info */
@@ -788,4 +788,13 @@ button:disabled {
 .info-bubble.visible {
     opacity: 1;
     transform: translateY(-10px);
+}
+
+/* --- Pi Steal Animation */
+.pi-steal-animation {
+    transition: left 1.2s ease-in-out, top 1.2s ease-in-out, transform 1.2s ease-in-out;
+}
+
+.card-animation {
+    /* This class is primarily for sizing and will be manipulated by JS */
 }
