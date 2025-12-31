@@ -9,14 +9,19 @@ body {
     box-sizing: border-box;
     margin: 0;
     overflow: hidden;
-    -webkit-user-select: none; /* Safari */
-    -moz-user-select: none;    /* Firefox */
-    -ms-user-select: none;     /* IE/Edge */
-    user-select: none;         /* Standard */
+    -webkit-user-select: none;
+    /* Safari */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* IE/Edge */
+    user-select: none;
+    /* Standard */
 }
 
 #game-board {
-    position: relative; /* For absolute positioning of animations */
+    position: relative;
+    /* For absolute positioning of animations */
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -28,10 +33,13 @@ body {
     background-color: #fff;
     border-radius: 10px;
     box-sizing: border-box;
-    flex-grow: 1; /* Make game board fill the body height */
+    flex-grow: 1;
+    /* Make game board fill the body height */
 }
 
-#ai-area, #player-area, #floor-area {
+#ai-area,
+#player-area,
+#floor-area {
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 5px;
@@ -41,16 +49,19 @@ body {
 #floor-area {
     order: 2;
 }
+
 #player-area {
     order: 3;
-    position: relative; /* Needed for hint positioning */
+    position: relative;
+    /* Needed for hint positioning */
 }
 
 #floor-area {
     display: flex;
     align-items: center;
     gap: 20px;
-    flex-grow: 1; /* Make floor area take up the extra space */
+    flex-grow: 1;
+    /* Make floor area take up the extra space */
 }
 
 .hand {
@@ -68,8 +79,10 @@ body {
     flex-wrap: wrap;
     gap: 10px;
     align-content: flex-start;
-    min-height: 240px; /* Fixed height for ~2 rows of cards */
-    background-color: #006400; /* Green board */
+    min-height: 240px;
+    /* Fixed height for ~2 rows of cards */
+    background-color: #006400;
+    /* Green board */
     padding: 15px;
     border-radius: 3px;
 }
@@ -95,15 +108,19 @@ body {
     background-color: white;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-size: 0; /* Remove text size */
-    position: relative; /* Needed for hint positioning */
+    font-size: 0;
+    /* Remove text size */
+    position: relative;
+    /* Needed for hint positioning */
 }
 
-.card img, .captured-card img {
+.card img,
+.captured-card img {
     width: 100%;
     height: 100%;
     object-fit: fill;
-    border-radius: 4px; /* Match parent border-radius */
+    border-radius: 4px;
+    /* Match parent border-radius */
 }
 
 .card:hover {
@@ -117,9 +134,20 @@ body {
 
 /* Add breathing animation to player's hand cards */
 @keyframes breathing {
-    0% { transform: scale(1); box-shadow: 0 0 4px rgba(0,0,0,0.2); }
-    50% { transform: scale(1.03); box-shadow: 0 0 10px rgba(50, 150, 255, 0.5); }
-    100% { transform: scale(1); box-shadow: 0 0 4px rgba(0,0,0,0.2); }
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+    }
+
+    50% {
+        transform: scale(1.03);
+        box-shadow: 0 0 10px rgba(50, 150, 255, 0.5);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+    }
 }
 
 #player-hand .card {
@@ -129,18 +157,23 @@ body {
 /* Make hover effect more pronounced for player's hand */
 #player-hand .card:hover {
     border-color: #007bff;
-    transform: scale(1.15) translateY(-10px); /* Scale up more and lift higher */
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); /* Add a larger shadow */
-    z-index: 10; /* Ensure it comes above other cards */
+    transform: scale(1.15) translateY(-10px);
+    /* Scale up more and lift higher */
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    /* Add a larger shadow */
+    z-index: 10;
+    /* Ensure it comes above other cards */
 }
 
 .card.shaken {
-    border: 2px solid #fdd835; /* 노란색 테두리 */
+    border: 2px solid #fdd835;
+    /* 노란색 테두리 */
     box-shadow: 0 0 8px #fdd835;
 }
 
 .card.ppeok-card {
-    border: 2px solid #dc3545; /* 붉은색 테두리 */
+    border: 2px solid #dc3545;
+    /* 붉은색 테두리 */
     box-shadow: 0 0 8px #dc3545;
 }
 
@@ -149,7 +182,8 @@ body {
     /* Adjust width and height to accommodate the largest possible stack.
        A 4-card stack (3 on floor + 1 played) with 25px offset would be 50 + 3*25 = 125px wide. */
     width: 125px;
-    height: 99px; /* Same height as a normal card */
+    height: 99px;
+    /* Same height as a normal card */
 }
 
 .ppeok-stack-card {
@@ -173,7 +207,8 @@ body {
 
 .ppeok-stack .card:hover {
     transform: none;
-    border-color: #dc3545; /* Keep the red border on hover */
+    border-color: #dc3545;
+    /* Keep the red border on hover */
 }
 
 .captured-container {
@@ -192,13 +227,14 @@ body {
 }
 
 .captured-card {
-     width: 36px;
-     height: 54px;
-     border: 1px solid #999;
-     position: absolute; /* Enable overlapping */
-     top: 0;
-     box-shadow: 1px 0px 3px rgba(0,0,0,0.2);
-     transition: left 0.3s ease;
+    width: 36px;
+    height: 54px;
+    border: 1px solid #999;
+    position: absolute;
+    /* Enable overlapping */
+    top: 0;
+    box-shadow: 1px 0px 3px rgba(0, 0, 0, 0.2);
+    transition: left 0.3s ease;
 }
 
 #info-area {
@@ -221,11 +257,13 @@ body {
 }
 
 .player-info-box.ai-info {
-    color: #007bff; /* AI's blue highlight color */
+    color: #007bff;
+    /* AI's blue highlight color */
 }
 
 .player-info-box.player-info {
-    color: #dc3545; /* Player's red highlight color */
+    color: #dc3545;
+    /* Player's red highlight color */
 }
 
 button {
@@ -255,12 +293,16 @@ button:disabled {
 
 #popup-modal {
     background-color: white;
-    padding: 25px;
+    padding: 15px;
     border-radius: 10px;
     text-align: center;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     min-width: 250px;
-    max-width: 600px;
+    max-width: 90%;
+    width: 450px;
+    /* removed max-height to ensure bg covers all content. JS content is now small enough to fit. */
+    display: flex;
+    flex-direction: column;
 }
 
 #popup-message {
@@ -288,7 +330,8 @@ button:disabled {
 #popup-modal.welcome-popup p {
     font-size: 18px;
     line-height: 1.7;
-    white-space: pre-line; /* Respects \n for line breaks */
+    white-space: pre-line;
+    /* Respects \n for line breaks */
 }
 
 #popup-modal.welcome-popup #popup-buttons button {
@@ -332,13 +375,16 @@ button:disabled {
 }
 
 .section {
-    flex: 1; /* Distribute space equally */
-    min-width: 100px; /* Prevent sections from becoming too small */
+    flex: 1;
+    /* Distribute space equally */
+    min-width: 100px;
+    /* Prevent sections from becoming too small */
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     padding: 5px;
     background-color: #f9f9f9;
-    position: relative; /* Add this for z-index stacking context */
+    position: relative;
+    /* Add this for z-index stacking context */
 }
 
 .section h5 {
@@ -348,14 +394,17 @@ button:disabled {
 }
 
 .captured-cards {
-    position: relative; /* Crucial for positioning cards inside */
-    min-height: 70px; /* Adjust height to fit cards */
+    position: relative;
+    /* Crucial for positioning cards inside */
+    min-height: 70px;
+    /* Adjust height to fit cards */
 }
 
 .player-name {
     font-size: 20px;
     font-weight: bold;
-    writing-mode: vertical-rl; /* Vertical text */
+    writing-mode: vertical-rl;
+    /* Vertical text */
     text-orientation: mixed;
     padding: 5px;
     background-color: #e9e9e9;
@@ -367,16 +416,20 @@ button:disabled {
 
 /* For Mobile Portrait */
 @media (max-width: 768px) and (orientation: portrait) {
-    html, body {
+
+    html,
+    body {
         height: 100%;
         margin: 0;
         padding: 0;
-        overflow: hidden; /* Prevent scrollbars */
+        overflow: hidden;
+        /* Prevent scrollbars */
     }
 
     #game-board {
         width: 100%;
-        height: 100vh; /* Use full viewport height */
+        height: 100vh;
+        /* Use full viewport height */
         margin: 0;
         padding: 2px;
         gap: 2px;
@@ -384,18 +437,22 @@ button:disabled {
         justify-content: space-between;
     }
 
-    #ai-area, #player-area {
+    #ai-area,
+    #player-area {
         flex-basis: 0;
         display: flex;
         flex-direction: column;
         padding: 1px;
     }
-    
+
     #ai-area {
-        flex-grow: 0.8; /* AI area slightly smaller */
+        flex-grow: 0.8;
+        /* AI area slightly smaller */
     }
+
     #player-area {
-        flex-grow: 1; /* Player area takes more space */
+        flex-grow: 1;
+        /* Player area takes more space */
     }
 
     #floor-area {
@@ -408,7 +465,7 @@ button:disabled {
         text-align: center;
         padding: 2px;
     }
-    
+
     .player-info {
         margin: 1px 5px;
         font-size: 11px;
@@ -418,14 +475,16 @@ button:disabled {
         font-size: 13px;
     }
 
-    .hand, .floor {
+    .hand,
+    .floor {
         gap: 2px;
         /* min-height is removed to allow flexbox to manage height */
         flex-grow: 1;
     }
 
     .card {
-        width: 58px; /* Slightly smaller cards */
+        width: 58px;
+        /* Slightly smaller cards */
         height: 87px;
     }
 
@@ -437,7 +496,7 @@ button:disabled {
         width: 28px;
         height: 42px;
     }
-    
+
     .captured-card {
         width: 26px;
         height: 39px;
@@ -458,7 +517,7 @@ button:disabled {
     }
 
     .captured-cards {
-       /* min-height is removed */
+        /* min-height is removed */
     }
 
     .player-name {
@@ -469,24 +528,31 @@ button:disabled {
 
 /* For Mobile Landscape */
 @media (max-height: 500px) and (orientation: landscape) {
-    html, body {
+
+    html,
+    body {
         height: 100%;
         margin: 0;
         padding: 0;
-        overflow: hidden; /* Prevent scrollbars */
+        overflow: hidden;
+        /* Prevent scrollbars */
     }
 
     #game-board {
-        height: 100vh; /* Make game board take full screen height */
+        height: 100vh;
+        /* Make game board take full screen height */
         width: 100%;
-        box-sizing: border-box; /* Include padding/border in the element's total width and height */
+        box-sizing: border-box;
+        /* Include padding/border in the element's total width and height */
         margin: 0;
         padding: 2px;
         gap: 2px;
-        justify-content: space-between; /* Distribute space */
+        justify-content: space-between;
+        /* Distribute space */
     }
 
-    #ai-area, #player-area {
+    #ai-area,
+    #player-area {
         flex-basis: 0;
         flex-grow: 1;
         display: flex;
@@ -496,13 +562,15 @@ button:disabled {
 
     #floor-area {
         flex-basis: 0;
-        flex-grow: 1.5; /* Give floor slightly more space */
+        flex-grow: 1.5;
+        /* Give floor slightly more space */
         padding: 2px;
         display: flex;
         flex-direction: column;
     }
 
-    .hand, .floor {
+    .hand,
+    .floor {
         min-height: 0;
         gap: 2px;
         padding: 2px;
@@ -537,7 +605,8 @@ button:disabled {
     #info-area {
         width: 100%;
         box-sizing: border-box;
-        order: -1; /* Move to top of floor area */
+        order: -1;
+        /* Move to top of floor area */
         padding: 2px;
         flex-grow: 0;
         flex-shrink: 0;
@@ -555,7 +624,8 @@ button:disabled {
     .player-name {
         font-size: 12px;
         padding: 2px;
-        writing-mode: horizontal-tb; /* Make name horizontal */
+        writing-mode: horizontal-tb;
+        /* Make name horizontal */
         text-align: center;
     }
 
@@ -580,13 +650,15 @@ button:disabled {
 }
 
 .highlight-green {
-    border: 3px solid #00ff00 !important; /* Bright green */
+    border: 3px solid #00ff00 !important;
+    /* Bright green */
     box-shadow: 0 0 10px #00ff00;
     transform: scale(1.05);
 }
 
 .highlight-player-move {
-    border: 3px solid #dc3545 !important; /* Red */
+    border: 3px solid #dc3545 !important;
+    /* Red */
     box-shadow: 0 0 10px #dc3545;
     transform: scale(1.05);
 }
@@ -622,15 +694,24 @@ button:disabled {
 
 
 /* --- Card Back Color */
-.card-back img, .ai-card-back img {
+.card-back img,
+.ai-card-back img {
     filter: hue-rotate(180deg) saturate(0.6) brightness(0.6) sepia(0.2);
 }
 
 /* --- Animations */
 @keyframes fake-flip {
-    0% { transform: scaleX(1); }
-    50% { transform: scaleX(0); }
-    100% { transform: scaleX(1); }
+    0% {
+        transform: scaleX(1);
+    }
+
+    50% {
+        transform: scaleX(0);
+    }
+
+    100% {
+        transform: scaleX(1);
+    }
 }
 
 .flipping {
@@ -641,7 +722,8 @@ button:disabled {
     position: absolute;
     top: 10px;
     right: 10px;
-    z-index: 1001; /* Higher than popup overlay */
+    z-index: 1001;
+    /* Higher than popup overlay */
 }
 
 #window-controls button {
@@ -661,45 +743,63 @@ button:disabled {
 /* --- Hint System Styles */
 .hint-container {
     position: absolute;
-    top: -110px; /* Increased top position for even larger hint */
+    top: -110px;
+    /* Increased top position for even larger hint */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    z-index: 51; /* Increased z-index to appear above other elements */
-    pointer-events: none; /* So it doesn't interfere with clicks */
+    z-index: 51;
+    /* Increased z-index to appear above other elements */
+    pointer-events: none;
+    /* So it doesn't interfere with clicks */
 }
 
 .hint-bubble {
-    background-color: #FFD700; /* Bright gold/yellow background */
-    color: #000; /* Black text for high contrast */
-    padding: 15px 22px; /* Increased padding */
+    background-color: #FFD700;
+    /* Bright gold/yellow background */
+    color: #000;
+    /* Black text for high contrast */
+    padding: 15px 22px;
+    /* Increased padding */
     border-radius: 12px;
-    font-size: 26px; /* Standardized size */
-    font-weight: bold; /* Bolder text */
+    font-size: 26px;
+    /* Standardized size */
+    font-weight: bold;
+    /* Bolder text */
     white-space: nowrap;
     margin-bottom: 5px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
     border: 2px solid #fff;
 }
 
 .hint-arrow {
     width: 0;
     height: 0;
-    border-left: 20px solid transparent; /* Larger arrow */
-    border-right: 20px solid transparent; /* Larger arrow */
-    border-top: 20px solid #FF0000; /* Red arrow */
+    border-left: 20px solid transparent;
+    /* Larger arrow */
+    border-right: 20px solid transparent;
+    /* Larger arrow */
+    border-top: 20px solid #FF0000;
+    /* Red arrow */
     animation: bounce 1s infinite;
 }
 
 @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
         transform: translateY(0);
     }
+
     40% {
         transform: translateY(-10px);
     }
+
     60% {
         transform: translateY(-5px);
     }
@@ -714,15 +814,18 @@ button:disabled {
     background-color: rgba(0, 100, 200, 0.85);
     color: white;
     padding: 15px 25px;
-    border-radius: 20px; /* Adjusted for a less oval shape */
+    border-radius: 20px;
+    /* Adjusted for a less oval shape */
     font-size: 26px;
     font-weight: bold;
     z-index: 30;
     pointer-events: none;
     border: 2px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    width: 600px; /* Set a fixed width */
-    text-align: center; /* Center the text inside */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 600px;
+    /* Set a fixed width */
+    text-align: center;
+    /* Center the text inside */
 }
 
 
@@ -738,7 +841,7 @@ button:disabled {
     font-weight: bold;
     z-index: 50;
     pointer-events: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     border: 2px solid #fff;
     opacity: 0;
     transition: opacity 0.4s ease, transform 0.4s ease;
@@ -767,22 +870,27 @@ button:disabled {
 /* --- Info Bubble for Game State */
 .info-bubble {
     position: absolute;
-    background-color: #007bff; /* Blue color for info */
+    background-color: #007bff;
+    /* Blue color for info */
     color: white;
     padding: 10px 15px;
     border-radius: 15px;
-    font-size: 22px; /* Standardized size */
+    font-size: 22px;
+    /* Standardized size */
     font-weight: bold;
-    z-index: 49; /* Slightly lower than shake bubble */
+    z-index: 49;
+    /* Slightly lower than shake bubble */
     pointer-events: none;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     border: 2px solid #fff;
     opacity: 0;
     transition: opacity 0.4s ease, transform 0.4s ease;
     transform: translateY(10px);
     white-space: nowrap;
-    bottom: 130px; /* Above the hand */
-    left: 20px; /* Position on the left */
+    bottom: 130px;
+    /* Above the hand */
+    left: 20px;
+    /* Position on the left */
 }
 
 .info-bubble.visible {
@@ -797,4 +905,33 @@ button:disabled {
 
 .card-animation {
     /* This class is primarily for sizing and will be manipulated by JS */
+}
+
+/* --- Money Transfer Animation */
+.money-coin {
+    position: absolute;
+    width: 40px;
+    /* Increased size */
+    height: 40px;
+    /* Increased size */
+    background-color: #ffd700;
+    /* Gold */
+    border: 3px solid #b8860b;
+    /* Thicker border */
+    border-radius: 50%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    z-index: 5000;
+    /* Very high z-index */
+    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.money-coin::after {
+    content: '₩';
+    font-size: 20px;
+    /* Larger font */
+    font-weight: bold;
+    color: #b8860b;
 }

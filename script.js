@@ -22,14 +22,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (playerConditionalStopBtn) {
         playerConditionalStopBtn.addEventListener('click', () => {
             if (currentPlayer !== 'player' || isGoStopTurn || isTurnInProgress) {
-                return; // Not player's turn or a decision is already pending.
+                showNotificationPopup("알림", "상대방이 게임을 진행 중입니다.\n기다려주세요.");
+                return;
             }
 
-            const playerScoreInfo = calculateScore(playerCaptured);
+            const playerScoreInfo = calculateScore(playerCaptured, playerStolenPi);
             const currentScore = playerScoreInfo.score;
 
             if (currentScore < 7) {
-                showNotificationPopup("점수 확인", `현재 점수는 ${currentScore}점 입니다. 7점이 되지 않았습니다.`);
+                showIntermediateScorePopup(playerScoreInfo);
             } else {
                 handleGoStopPopup(); // Score is high enough, show the real Go/Stop choice.
             }
@@ -321,8 +322,100 @@ document.addEventListener('DOMContentLoaded', () => {
         popupOverlay.classList.remove('hidden');
 
         await sleep(duration); // Pause execution for the duration
-
         hidePopup(); // Hide after the pause
+    }
+
+    function showIntermediateScorePopup(scoreInfo) {
+        // 상세 점수 및 개수 계산
+        const gwangs = playerCaptured.filter(c => c.type === TYPES.GWANG);
+        const yeols = playerCaptured.filter(c => c.type === TYPES.YEOL);
+        const ttis = playerCaptured.filter(c => c.type === TYPES.TTI);
+        const pis = playerCaptured.filter(c => c.type === TYPES.PI || c.isDoublePi);
+
+        // 피 개수 계산 (쌍피 고려 + 훔친 피 고려)
+        const totalPiCount = pis.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0) +
+            playerStolenPi.reduce((acc, card) => acc + (card.isDoublePi ? 2 : 1), 0);
+
+        // 부분 점수 계산 로직
+        let gwangScore = 0;
+        if (gwangs.length === 5) gwangScore = 15;
+        else if (gwangs.length === 4) gwangScore = 4;
+        else if (gwangs.length === 3) gwangScore = gwangs.some(c => c.isBiGwang) ? 2 : 3;
+
+        let yeolScore = 0;
+        const godoriCards = yeols.filter(c => [5, 13, 30].includes(c.id));
+        if (godoriCards.length === 3) yeolScore += 5;
+        const nonGodoriYeols = yeols.filter(c => !godoriCards.includes(c));
+        if (yeols.length >= 5) yeolScore += yeols.length - 4;
+
+        let ttiScore = 0;
+        if (ttis.length >= 5) ttiScore += ttis.length - 4;
+
+        let piScore = 0;
+        if (totalPiCount >= 10) piScore = totalPiCount - 9;
+
+        // **노인 사용자를 위한 가독성 중심 UI**
+        // 폰트 크기 대폭 확대, 줄 간격 확보, 명확한 색상 대비
+        // 공간 절약을 위해 패딩과 마진을 세밀하게 조정
+        // 2x2 그리드 사용하여 세로 길이 절반으로 축소
+        const message = `
+            <div style="font-size: 1.3em; color: #111; margin-bottom: 5px; font-weight: bold; line-height: 1.2;">
+                총 <span style="color:#c00; font-size: 1.2em;">${scoreInfo.score}점</span>
+            </div>
+            <div style="font-size: 1.15em; background: #fffcf0; padding: 8px; border: 2px solid #ddd; border-radius: 12px; text-align: left; line-height: 1.25; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <div style="border-bottom: 1px solid #ccc; padding-bottom: 2px;">
+                    <span>🎴 광(${gwangs.length})</span><br><b style="color:#007bff;">${gwangScore}점</b>
+                </div>
+                <div style="border-bottom: 1px solid #ccc; padding-bottom: 2px;">
+                    <span>🌱 열(${yeols.length})</span><br><b style="color:#28a745;">${yeolScore}점</b>
+                </div>
+                <div style="padding-top: 2px;">
+                    <span>🎋 띠(${ttis.length})</span><br><b style="color:#d39e00;">${ttiScore}점</b>
+                </div>
+                <div style="padding-top: 2px;">
+                    <span>🔴 피(${totalPiCount})</span><br><b style="color:#dc3545;">${piScore}점</b>
+                </div>
+            </div>
+            <div style="margin-top: 8px; font-size: 0.9em; color: #555; background-color: #f0f0f0; padding: 5px; border-radius: 8px;">
+                <b>7점</b> 이상 스톱 가능 (1분 후 닫힘)
+            </div>
+        `;
+
+        popupTitle.textContent = "점수 상세";
+        popupTitle.style.fontSize = "1.4em";
+        popupTitle.style.marginBottom = "5px";
+        popupMessage.innerHTML = message;
+
+        popupChoicesDiv.innerHTML = '';
+        popupChoicesDiv.style.display = 'none';
+
+        const popupButtonsDiv = document.getElementById('popup-buttons');
+        popupButtonsDiv.innerHTML = '';
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = '확 인';
+        closeBtn.style.width = "100%";
+        closeBtn.style.padding = "12px 0";
+        closeBtn.style.fontSize = "1.3em";
+        closeBtn.style.fontWeight = "bold";
+        closeBtn.style.backgroundColor = "#4CAF50";
+        closeBtn.style.color = "white";
+        closeBtn.style.border = "none";
+        closeBtn.style.borderRadius = "10px";
+        closeBtn.style.marginTop = "8px";
+
+        closeBtn.addEventListener('click', () => {
+            hidePopup();
+            if (popupTimeout) clearTimeout(popupTimeout);
+        });
+        popupButtonsDiv.appendChild(closeBtn);
+
+        popupOverlay.classList.remove('hidden');
+
+        // 1분(60초) 후 자동 닫힘
+        const popupTimeout = setTimeout(() => {
+            hidePopup();
+        }, 60000);
     }
 
     function showChoicePopup(playedCard, choices) {
@@ -475,6 +568,8 @@ document.addEventListener('DOMContentLoaded', () => {
     async function endRound(winner) {
         clearInactivityTimer();
         let message;
+        let finalWinnings = 0;
+
         if (winner === 'draw') {
             message = "이번 판은 무승부입니다!";
         } else {
@@ -534,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const multipliedScore = baseScore * multiplier;
             const finalScore = multipliedScore + goBonus;
-            const finalWinnings = finalScore * 100;
+            finalWinnings = finalScore * 100;
 
             if (winner === 'player') {
                 playerMoney += finalWinnings;
@@ -550,7 +645,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             saveMoney();
-            render();
+            // Don't render money immediately, wait for animation
+            // render(); 
 
             messageLines.push(...scoreLog);
             if (goBonus > 0) messageLines.push(`고 보너스: +${goBonus}점`);
@@ -564,7 +660,14 @@ document.addEventListener('DOMContentLoaded', () => {
             message = messageLines.join('\n');
         }
 
+        // 1. Show Popup FIRST (User reads score, confirms)
         await showPopup("라운드 종료", message, [{ text: '다음 판', value: 'next' }]);
+
+        // 2. Play Money Animation (Only if not draw)
+        if (winner !== 'draw') {
+            await animateMoneyTransfer(winner, finalWinnings);
+            render(); // Update UI after animation to show new money balances
+        }
 
         // Check for bankruptcy and reset if needed
         if (playerMoney <= 0 || aiMoney <= 0) {
@@ -575,6 +678,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         await startGame(winner === 'draw' ? 'player' : winner);
+    }
+
+    async function animateMoneyTransfer(winner, amount) {
+        const coinCount = Math.min(20, Math.max(5, Math.floor(amount / 1000))); // 5 to 20 coins
+        const startElement = winner === 'player' ? document.getElementById('ai-money') : document.getElementById('player-money');
+        const endElement = winner === 'player' ? document.getElementById('player-money') : document.getElementById('ai-money');
+
+        if (!startElement || !endElement) return;
+
+        const startRect = startElement.getBoundingClientRect();
+        const endRect = endElement.getBoundingClientRect();
+        const gameBoard = document.getElementById('game-board');
+        const gameBoardRect = gameBoard.getBoundingClientRect();
+
+        const promises = [];
+
+        for (let i = 0; i < coinCount; i++) {
+            promises.push(new Promise(resolve => {
+                const coin = document.createElement('div');
+                coin.classList.add('money-coin');
+
+                // Random start offset
+                const startX = (startRect.left - gameBoardRect.left) + (startRect.width / 2) + (Math.random() * 20 - 10);
+                const startY = (startRect.top - gameBoardRect.top) + (startRect.height / 2) + (Math.random() * 20 - 10);
+
+                coin.style.left = `${startX}px`;
+                coin.style.top = `${startY}px`;
+
+                gameBoard.appendChild(coin);
+
+                // Delay for staggered animation
+                setTimeout(() => {
+                    coin.style.transition = 'left 5s ease-in-out, top 5s ease-in-out'; // Smooth 5s animation
+                    // Removed bouncy effect and opacity fade-out so it stays visible
+
+                    // Random end offset
+                    const endX = (endRect.left - gameBoardRect.left) + (endRect.width / 2) + (Math.random() * 20 - 10);
+                    const endY = (endRect.top - gameBoardRect.top) + (endRect.height / 2) + (Math.random() * 20 - 10);
+
+                    coin.style.left = `${endX}px`;
+                    coin.style.top = `${endY}px`;
+                    // coin.style.opacity = '0'; // REMOVED: Keep full visibility until end
+
+                    setTimeout(() => {
+                        if (gameBoard.contains(coin)) gameBoard.removeChild(coin);
+                        resolve();
+                    }, 5000); // Wait for transition
+                }, i * 300); // Stagger
+            }));
+        }
+
+        await Promise.all(promises);
     }
 
     function chooseBestCard(cards) {
