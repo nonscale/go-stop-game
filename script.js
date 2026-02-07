@@ -567,6 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
             playerHandDiv.style.pointerEvents = 'auto';
             try {
                 await handleSpecialActions();
+                showTurnNotificationBubble(); // 게임 시작 시 첫 알림 표시
                 startInactivityTimer(); // Start timer on player's first turn
             } catch (e) {
                 console.error("Error during special actions at start:", e);
@@ -1239,6 +1240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function switchTurn(fromPlayer) {
         clearInactivityTimer();
+        hideTurnNotificationBubble(); // 이전 턴의 알림을 확실히 제거
         hideDiscardHint(); // Hide any existing hints before switching turns
         hideShakeBubbles(); // Clear any previous shake bubbles
         hideInfoBubble(); // Clear any previous info bubbles
@@ -1250,6 +1252,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 showShakeBubble('ai', '패 흔들었소.');
             }
             playerHandDiv.style.pointerEvents = 'none';
+
+            // AI 턴에서도 찬스 알림 표시
+            showTurnNotificationBubble();
+
             setTimeout(aiTurn, 1000);
         } else { // Player's turn
             if (playerShakeActive) {
@@ -1273,6 +1279,7 @@ document.addEventListener('DOMContentLoaded', () => {
             playerHandDiv.style.pointerEvents = 'auto';
             try {
                 await handleSpecialActions();
+                showTurnNotificationBubble(); // 플레이어 턴 시작 시 알림 표시
                 startInactivityTimer();
             } catch (e) {
                 console.error("Error during special actions on player turn:", e);
@@ -1345,13 +1352,8 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInactivityTimer();
         if (currentPlayer !== 'player' || isGoStopTurn) return;
 
-        // Show notification immediately (short delay for UI update)
-        setTimeout(() => {
-            showTurnNotificationBubble();
-        }, 200);
-
-        // Optional: We could still have an inactivity nag if we wanted, but the user complained about the "7 points" nag.
-        // For now, let's just stick to the immediate notification.
+        // 더 이상 startInactivityTimer에서 showTurnNotificationBubble을 직접 호출하지 않습니다.
+        // (switchTurn에서 이미 호출되었으므로 중복 증가 방지)
     }
 
     let prevPlayerSets = { godori: false, hongdan: false, cheongdan: false, chodan: false };
