@@ -273,6 +273,14 @@ document.addEventListener('DOMContentLoaded', () => {
         aiMoneySpan.textContent = aiMoney;
         playerScoreSpan.textContent = calculateScore(playerCaptured, playerStolenPi).score;
         aiScoreSpan.textContent = calculateScore(aiCaptured, aiStolenPi).score;
+
+        // Update large score displays
+        const playerScoreLarge = document.getElementById('player-score-large');
+        const aiScoreLarge = document.getElementById('ai-score-large');
+        if (playerScoreLarge) playerScoreLarge.textContent = `${calculateScore(playerCaptured, playerStolenPi).score}점`;
+        if (aiScoreLarge) aiScoreLarge.textContent = `${calculateScore(aiCaptured, aiStolenPi).score}점`;
+
+        checkAndCelebrateSets();
     }
 
     function hidePopup() {
@@ -1319,12 +1327,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // 폭탄 메시지 표시 및 피 훔치기
         await showNotificationPopup("폭탄!", `${playerName}님의 폭탄! 상대방의 피를 한 장 가져옵니다.`);
         await stealPi(player);
-
         await finishTurn(player, allBombCards, null, month, 1);
     }
 
     // ... rest of the file
-    // --- Inactivity Timer ---
+    // --- Inactivity Timer & Turn Notification ---
     function clearInactivityTimer() {
         if (inactivityTimer) {
             clearTimeout(inactivityTimer);
@@ -1336,40 +1343,219 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInactivityTimer();
         if (currentPlayer !== 'player' || isGoStopTurn) return;
 
-        const initialDelay = 5000;
-        const repeatInterval = 20000; // 5s show time + 15s wait time
+        // Show notification immediately (short delay for UI update)
+        setTimeout(() => {
+            showTurnNotificationBubble();
+        }, 200);
 
-        const scheduleNextBubble = (delay) => {
-            inactivityTimer = setTimeout(() => {
-                showTurnNotificationBubble();
-                scheduleNextBubble(repeatInterval); // Schedule the next one
-            }, delay);
+        // Optional: We could still have an inactivity nag if we wanted, but the user complained about the "7 points" nag.
+        // For now, let's just stick to the immediate notification.
+    }
+
+    let prevPlayerSets = { godori: false, hongdan: false, cheongdan: false, chodan: false };
+    let prevAiSets = { godori: false, hongdan: false, cheongdan: false, chodan: false };
+
+    function checkAndCelebrateSets() {
+        const checkSets = (captured, prevSets, playerName) => {
+            const currentSets = {
+                godori: captured.filter(c => [5, 13, 30].includes(c.id)).length === 3,
+                hongdan: captured.filter(c => [2, 6, 10].includes(c.id)).length === 3,
+                cheongdan: captured.filter(c => [22, 34, 38].includes(c.id)).length === 3,
+                chodan: captured.filter(c => [14, 18, 26].includes(c.id)).length === 3
+            };
+
+            if (currentSets.godori && !prevSets.godori) showCelebrationPopup(playerName, "고도리");
+            if (currentSets.hongdan && !prevSets.hongdan) showCelebrationPopup(playerName, "홍단");
+            if (currentSets.cheongdan && !prevSets.cheongdan) showCelebrationPopup(playerName, "청단");
+            if (currentSets.chodan && !prevSets.chodan) showCelebrationPopup(playerName, "초단");
+
+            return currentSets;
         };
 
-        scheduleNextBubble(initialDelay); // Schedule the first one
+        prevPlayerSets = checkSets(playerCaptured, prevPlayerSets, '김여사');
+        prevAiSets = checkSets(aiCaptured, prevAiSets, OPPONENT_NAME);
+    }
+
+    function showCelebrationPopup(playerName, setName) {
+        const popup = document.createElement('div');
+        popup.className = 'celebration-popup';
+        popup.innerHTML = `
+            <div class="celebration-content">
+                <div class="confetti">🎉</div>
+                <div class="celebration-text">
+                    <span class="player-name-pop">${playerName}</span><br>
+                    <span class="set-name-pop">${setName} 달성!</span>
+                </div>
+                <div class="confetti">🎊</div>
+            </div>
+        `;
+        document.body.appendChild(popup);
+
+        // Sound effect (optional, maybe later)
+
+        // Remove after animation
+        setTimeout(() => {
+            popup.classList.add('fade-out');
+            setTimeout(() => popup.remove(), 500);
+        }, 2500);
     }
 
     function showTurnNotificationBubble() {
         // Remove any existing bubble first
         hideTurnNotificationBubble();
 
+        // Check for "One Card Left" warnings
+        let message = "";
+        let type = "player-generic";
+
+        // 1. Check Godori (2, 4, 8 Yeol)
+        const godoriCards = [5, 13, 30]; // IDs for Feb(5), Apr(13), Aug(30) Yeol
+        const playerGodori = playerCaptured.filter(c => godoriCards.includes(c.id)).map(c => c.id);
+        if (playerGodori.length === 2) {
+            const missingId = godoriCards.find(id => !playerGodori.includes(id));
+            const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByAi) {
+                message = "고도리 찬스!";
+                type = "player-warning";
+            }
+        }
+
+        // 2. Check Hongdan (1, 2, 3 Tti)
+        if (!message) {
+            const hongdanCards = [2, 6, 10];
+            const playerHongdan = playerCaptured.filter(c => hongdanCards.includes(c.id)).map(c => c.id);
+            if (playerHongdan.length === 2) {
+                const missingId = hongdanCards.find(id => !playerHongdan.includes(id));
+                // Note: Only check if AI captured it. If it's on floor or deck, it's still a chance.
+                const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
+                if (!isMissingCapturedByAi) {
+                    message = "홍단 찬스!";
+                    type = "player-warning";
+                }
+            }
+        }
+
+        // 3. Check Cheongdan (6, 9, 10 Tti)
+        if (!message) {
+            const cheongdanCards = [22, 34, 38];
+            const playerCheongdan = playerCaptured.filter(c => cheongdanCards.includes(c.id)).map(c => c.id);
+            if (playerCheongdan.length === 2) {
+                const missingId = cheongdanCards.find(id => !playerCheongdan.includes(id));
+                const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
+                if (!isMissingCapturedByAi) {
+                    message = "청단 찬스!";
+                    type = "player-warning";
+                }
+            }
+        }
+
+        // 4. Check Chodan (4, 5, 7 Tti)
+        if (!message) {
+            const chodanCards = [14, 18, 26];
+            const playerChodan = playerCaptured.filter(c => chodanCards.includes(c.id)).map(c => c.id);
+            if (playerChodan.length === 2) {
+                const missingId = chodanCards.find(id => !playerChodan.includes(id));
+                const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
+                if (!isMissingCapturedByAi) {
+                    message = "초단 찬스!";
+                    type = "player-warning";
+                }
+            }
+        }
+
+        // --- AI (Opponent) Checks ---
+        // If Player has no immediate chance, check if AI is close to scoring standard sets
+        if (!message) {
+            // 1. AI Godori
+            const godoriCards = [5, 13, 30];
+            const aiGodori = aiCaptured.filter(c => godoriCards.includes(c.id)).map(c => c.id);
+            if (aiGodori.length === 2) {
+                const missingId = godoriCards.find(id => !aiGodori.includes(id));
+                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+                if (!isMissingCapturedByPlayer) {
+                    message = "할머니 고도리 찬스!";
+                    type = "ai-warning";
+                }
+            }
+        }
+
+        if (!message) {
+            // 2. AI Hongdan
+            const hongdanCards = [2, 6, 10];
+            const aiHongdan = aiCaptured.filter(c => hongdanCards.includes(c.id)).map(c => c.id);
+            if (aiHongdan.length === 2) {
+                const missingId = hongdanCards.find(id => !aiHongdan.includes(id));
+                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+                if (!isMissingCapturedByPlayer) {
+                    message = "할머니 홍단 찬스!";
+                    type = "ai-warning";
+                }
+            }
+        }
+
+        if (!message) {
+            // 3. AI Cheongdan
+            const cheongdanCards = [22, 34, 38];
+            const aiCheongdan = aiCaptured.filter(c => cheongdanCards.includes(c.id)).map(c => c.id);
+            if (aiCheongdan.length === 2) {
+                const missingId = cheongdanCards.find(id => !aiCheongdan.includes(id));
+                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+                if (!isMissingCapturedByPlayer) {
+                    message = "할머니 청단 찬스!";
+                    type = "ai-warning";
+                }
+            }
+        }
+
+        if (!message) {
+            // 4. AI Chodan
+            const chodanCards = [14, 18, 26];
+            const aiChodan = aiCaptured.filter(c => chodanCards.includes(c.id)).map(c => c.id);
+            if (aiChodan.length === 2) {
+                const missingId = chodanCards.find(id => !aiChodan.includes(id));
+                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+                if (!isMissingCapturedByPlayer) {
+                    message = "할머니 초단 찬스!";
+                    type = "ai-warning";
+                }
+            }
+        }
+
+        // Generic Message
+        if (!message) {
+            message = '김여사님 차례에요.';
+            type = 'player-generic';
+        }
+
+        renderBubble(message, type);
+    }
+
+    function renderBubble(message, type) {
         const bubble = document.createElement('div');
         bubble.className = 'turn-notification-bubble';
+        bubble.textContent = message;
 
-        const playerScoreInfo = calculateScore(playerCaptured, playerStolenPi);
-        const currentScore = playerScoreInfo.score;
+        let parentArea;
 
-        let message = '김여사님 차례에요.';
-        if (currentScore < 7) {
-            message += `<br>7점(현재: ${currentScore}점)이 되어야 스톱할 수 있어요.`;
+        if (type === 'ai-warning') {
+            bubble.classList.add('warning-bubble', 'ai-side');
+            parentArea = document.getElementById('ai-area');
+        } else if (type === 'player-warning') {
+            bubble.classList.add('warning-bubble', 'player-side');
+            parentArea = document.getElementById('player-area');
+        } else {
+            // Generic
+            bubble.classList.add('player-side'); // Standard position
+            parentArea = document.getElementById('player-area');
         }
-        bubble.innerHTML = message; // Use innerHTML for the line break
 
-        const playerArea = document.getElementById('player-area');
-        playerArea.appendChild(bubble);
+        if (parentArea) {
+            parentArea.appendChild(bubble);
+        }
 
-        // Set a timer to automatically hide the bubble after 5 seconds
-        turnNotificationTimer = setTimeout(hideTurnNotificationBubble, 5000);
+        // Hide timer
+        const duration = (type.includes('warning')) ? 5000 : 3000;
+        turnNotificationTimer = setTimeout(hideTurnNotificationBubble, duration);
     }
 
     function hideTurnNotificationBubble() {

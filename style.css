@@ -400,15 +400,48 @@ button:disabled {
     /* Adjust height to fit cards */
 }
 
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    background-color: #e9e9e9;
+    border-radius: 5px;
+    padding: 5px;
+    min-width: 80px;
+    /* Ensure enough width */
+}
+
 .player-name {
     font-size: 20px;
     font-weight: bold;
-    writing-mode: vertical-rl;
-    /* Vertical text */
-    text-orientation: mixed;
-    padding: 5px;
-    background-color: #e9e9e9;
-    border-radius: 5px;
+    /* Remove vertical writing mode for better readability with score */
+    /* writing-mode: vertical-rl; */
+    /* text-orientation: mixed; */
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    /* Background moved to container */
+    border-radius: 0;
+}
+
+.large-score {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #333;
+    text-shadow: 1px 1px 0 #fff;
+    margin-top: 5px;
+}
+
+#ai-score-large {
+    color: #007bff;
+    /* Blue for AI */
+}
+
+#player-score-large {
+    color: #dc3545;
+    /* Red for Player */
 }
 
 
@@ -808,27 +841,62 @@ button:disabled {
 /* --- Turn Notification Bubble */
 .turn-notification-bubble {
     position: absolute;
-    top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(0, 100, 200, 0.85);
+    background-color: rgba(0, 100, 200, 0.9);
     color: white;
-    padding: 15px 25px;
-    border-radius: 20px;
-    /* Adjusted for a less oval shape */
-    font-size: 26px;
+    padding: 20px 40px;
+    /* Larger padding */
+    border-radius: 30px;
+    font-size: 24px;
+    /* Larger font */
     font-weight: bold;
-    z-index: 30;
+    z-index: 60;
     pointer-events: none;
-    border: 2px solid rgba(255, 255, 255, 0.9);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 600px;
-    /* Set a fixed width */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
     text-align: center;
-    /* Center the text inside */
+    transition: opacity 0.5s ease;
 }
 
+.turn-notification-bubble.player-side {
+    top: auto;
+    bottom: 180px;
+    /* Position above Player Hand to avoid covering cards */
+}
 
+.turn-notification-bubble.ai-side {
+    top: 180px;
+    /* Position below AI Hand/Profile */
+    bottom: auto;
+}
+
+.turn-notification-bubble.warning-bubble {
+    background-color: #ff3300;
+    /* Vivid Red-Orange */
+    font-size: 32px;
+    /* Very Large for Warning */
+    border: 3px solid #fff;
+    /* White border for emphasis */
+    animation: pulse-warning 1.5s infinite;
+}
+
+@keyframes pulse-warning {
+    0% {
+        transform: translateX(-50%) scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 51, 0, 0.7);
+    }
+
+    70% {
+        transform: translateX(-50%) scale(1.05);
+        box-shadow: 0 0 0 15px rgba(255, 51, 0, 0);
+    }
+
+    100% {
+        transform: translateX(-50%) scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 51, 0, 0);
+    }
+}
 
 /* --- Speech Bubble for Shake Action */
 .speech-bubble {
@@ -905,6 +973,79 @@ button:disabled {
 
 .card-animation {
     /* This class is primarily for sizing and will be manipulated by JS */
+}
+
+/* --- Celebration Popup */
+.celebration-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #ffeb3b, #fbc02d);
+    border: 5px solid #fff;
+    border-radius: 20px;
+    padding: 30px 50px;
+    z-index: 2000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.celebration-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+}
+
+.celebration-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.player-name-pop {
+    font-size: 1.5rem;
+    color: #5d4037;
+    font-weight: bold;
+}
+
+.set-name-pop {
+    font-size: 3rem;
+    color: #d32f2f;
+    font-weight: 900;
+    text-shadow: 2px 2px 0 #fff;
+}
+
+.confetti {
+    font-size: 3rem;
+    animation: wiggle 1s infinite alternate;
+}
+
+.celebration-popup.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+@keyframes popIn {
+    from {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+
+    to {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes wiggle {
+    from {
+        transform: rotate(-10deg);
+    }
+
+    to {
+        transform: rotate(10deg);
+    }
 }
 
 /* --- Money Transfer Animation */
