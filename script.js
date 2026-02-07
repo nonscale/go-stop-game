@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let playerMoney, aiMoney;
     let ppukStacks = [], playerShake = false, aiShake = false, playerShakeActive = false, aiShakeActive = false, canShake = false, playerGoCount = 0, aiGoCount = 0, hasBeenOfferedShake = false;
     let isGoStopTurn = false, canBomb = false, bombMonths = [], inactivityTimer = null, turnNotificationTimer = null, isTurnInProgress = false;
+    let currentChanceIndex = 0; // 순차적으로 찬스를 표시하기 위한 인덱스
 
     function loadGameData() {
         playerMoney = parseInt(localStorage.getItem('goStopPlayerMoney_v2') || '50000');
@@ -514,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
         canBomb = false;
         bombMonth = -1;
         isTurnInProgress = false;
+        currentChanceIndex = 0; // 찬스 인덱스 초기화
 
         // Shuffle deck
         for (let i = 0; i < 5; i++) {
@@ -1404,10 +1406,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Remove any existing bubble first
         hideTurnNotificationBubble();
 
-        // Check for "One Card Left" warnings
-        let message = "";
-        let type = "player-generic";
+        // 모든 가능한 찬스를 수집
+        const allChances = [];
 
+        // --- Player Chances ---
         // 1. Check Godori (2, 4, 8 Yeol)
         const godoriCards = [5, 13, 30]; // IDs for Feb(5), Apr(13), Aug(30) Yeol
         const playerGodori = playerCaptured.filter(c => godoriCards.includes(c.id)).map(c => c.id);
@@ -1415,114 +1417,98 @@ document.addEventListener('DOMContentLoaded', () => {
             const missingId = godoriCards.find(id => !playerGodori.includes(id));
             const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
             if (!isMissingCapturedByAi) {
-                message = "고도리 찬스!";
-                type = "player-warning";
+                allChances.push({ message: "고도리 찬스!", type: "player-warning" });
             }
         }
 
         // 2. Check Hongdan (1, 2, 3 Tti)
-        if (!message) {
-            const hongdanCards = [2, 6, 10];
-            const playerHongdan = playerCaptured.filter(c => hongdanCards.includes(c.id)).map(c => c.id);
-            if (playerHongdan.length === 2) {
-                const missingId = hongdanCards.find(id => !playerHongdan.includes(id));
-                // Note: Only check if AI captured it. If it's on floor or deck, it's still a chance.
-                const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
-                if (!isMissingCapturedByAi) {
-                    message = "홍단 찬스!";
-                    type = "player-warning";
-                }
+        const hongdanCards = [2, 6, 10];
+        const playerHongdan = playerCaptured.filter(c => hongdanCards.includes(c.id)).map(c => c.id);
+        if (playerHongdan.length === 2) {
+            const missingId = hongdanCards.find(id => !playerHongdan.includes(id));
+            const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByAi) {
+                allChances.push({ message: "홍단 찬스!", type: "player-warning" });
             }
         }
 
         // 3. Check Cheongdan (6, 9, 10 Tti)
-        if (!message) {
-            const cheongdanCards = [22, 34, 38];
-            const playerCheongdan = playerCaptured.filter(c => cheongdanCards.includes(c.id)).map(c => c.id);
-            if (playerCheongdan.length === 2) {
-                const missingId = cheongdanCards.find(id => !playerCheongdan.includes(id));
-                const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
-                if (!isMissingCapturedByAi) {
-                    message = "청단 찬스!";
-                    type = "player-warning";
-                }
+        const cheongdanCards = [22, 34, 38];
+        const playerCheongdan = playerCaptured.filter(c => cheongdanCards.includes(c.id)).map(c => c.id);
+        if (playerCheongdan.length === 2) {
+            const missingId = cheongdanCards.find(id => !playerCheongdan.includes(id));
+            const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByAi) {
+                allChances.push({ message: "청단 찬스!", type: "player-warning" });
             }
         }
 
         // 4. Check Chodan (4, 5, 7 Tti)
-        if (!message) {
-            const chodanCards = [14, 18, 26];
-            const playerChodan = playerCaptured.filter(c => chodanCards.includes(c.id)).map(c => c.id);
-            if (playerChodan.length === 2) {
-                const missingId = chodanCards.find(id => !playerChodan.includes(id));
-                const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
-                if (!isMissingCapturedByAi) {
-                    message = "초단 찬스!";
-                    type = "player-warning";
-                }
+        const chodanCards = [14, 18, 26];
+        const playerChodan = playerCaptured.filter(c => chodanCards.includes(c.id)).map(c => c.id);
+        if (playerChodan.length === 2) {
+            const missingId = chodanCards.find(id => !playerChodan.includes(id));
+            const isMissingCapturedByAi = aiCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByAi) {
+                allChances.push({ message: "초단 찬스!", type: "player-warning" });
             }
         }
 
-        // --- AI (Opponent) Checks ---
-        // If Player has no immediate chance, check if AI is close to scoring standard sets
-        if (!message) {
-            // 1. AI Godori
-            const godoriCards = [5, 13, 30];
-            const aiGodori = aiCaptured.filter(c => godoriCards.includes(c.id)).map(c => c.id);
-            if (aiGodori.length === 2) {
-                const missingId = godoriCards.find(id => !aiGodori.includes(id));
-                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
-                if (!isMissingCapturedByPlayer) {
-                    message = "할머니 고도리 찬스!";
-                    type = "ai-warning";
-                }
+        // --- AI (Opponent) Chances ---
+        // 1. AI Godori
+        const aiGodori = aiCaptured.filter(c => godoriCards.includes(c.id)).map(c => c.id);
+        if (aiGodori.length === 2) {
+            const missingId = godoriCards.find(id => !aiGodori.includes(id));
+            const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByPlayer) {
+                allChances.push({ message: "할머니 고도리 찬스!", type: "ai-warning" });
             }
         }
 
-        if (!message) {
-            // 2. AI Hongdan
-            const hongdanCards = [2, 6, 10];
-            const aiHongdan = aiCaptured.filter(c => hongdanCards.includes(c.id)).map(c => c.id);
-            if (aiHongdan.length === 2) {
-                const missingId = hongdanCards.find(id => !aiHongdan.includes(id));
-                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
-                if (!isMissingCapturedByPlayer) {
-                    message = "할머니 홍단 찬스!";
-                    type = "ai-warning";
-                }
+        // 2. AI Hongdan
+        const aiHongdan = aiCaptured.filter(c => hongdanCards.includes(c.id)).map(c => c.id);
+        if (aiHongdan.length === 2) {
+            const missingId = hongdanCards.find(id => !aiHongdan.includes(id));
+            const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByPlayer) {
+                allChances.push({ message: "할머니 홍단 찬스!", type: "ai-warning" });
             }
         }
 
-        if (!message) {
-            // 3. AI Cheongdan
-            const cheongdanCards = [22, 34, 38];
-            const aiCheongdan = aiCaptured.filter(c => cheongdanCards.includes(c.id)).map(c => c.id);
-            if (aiCheongdan.length === 2) {
-                const missingId = cheongdanCards.find(id => !aiCheongdan.includes(id));
-                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
-                if (!isMissingCapturedByPlayer) {
-                    message = "할머니 청단 찬스!";
-                    type = "ai-warning";
-                }
+        // 3. AI Cheongdan
+        const aiCheongdan = aiCaptured.filter(c => cheongdanCards.includes(c.id)).map(c => c.id);
+        if (aiCheongdan.length === 2) {
+            const missingId = cheongdanCards.find(id => !aiCheongdan.includes(id));
+            const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByPlayer) {
+                allChances.push({ message: "할머니 청단 찬스!", type: "ai-warning" });
             }
         }
 
-        if (!message) {
-            // 4. AI Chodan
-            const chodanCards = [14, 18, 26];
-            const aiChodan = aiCaptured.filter(c => chodanCards.includes(c.id)).map(c => c.id);
-            if (aiChodan.length === 2) {
-                const missingId = chodanCards.find(id => !aiChodan.includes(id));
-                const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
-                if (!isMissingCapturedByPlayer) {
-                    message = "할머니 초단 찬스!";
-                    type = "ai-warning";
-                }
+        // 4. AI Chodan
+        const aiChodan = aiCaptured.filter(c => chodanCards.includes(c.id)).map(c => c.id);
+        if (aiChodan.length === 2) {
+            const missingId = chodanCards.find(id => !aiChodan.includes(id));
+            const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
+            if (!isMissingCapturedByPlayer) {
+                allChances.push({ message: "할머니 초단 찬스!", type: "ai-warning" });
             }
         }
 
-        // Generic Message
-        if (!message) {
+        // 찬스가 있으면 순차적으로 표시
+        let message = '';
+        let type = 'player-generic';
+
+        if (allChances.length > 0) {
+            // 순차적으로 돌아가며 표시
+            const selectedChance = allChances[currentChanceIndex % allChances.length];
+            message = selectedChance.message;
+            type = selectedChance.type;
+
+            // 다음 턴을 위해 인덱스 증가
+            currentChanceIndex++;
+        } else {
+            // Generic Message
             message = '김여사님 차례에요.';
             type = 'player-generic';
         }
