@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         div.classList.add(isCaptured ? 'captured-card' : 'card');
         if (card) {
             div.dataset.cardId = card.id;
+            div.dataset.month = card.month;
             if (card.highlight) {
                 div.classList.add('highlight-player-move');
             }
