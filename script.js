@@ -1405,6 +1405,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showTurnNotificationBubble() {
+        if (isTurnInProgress || isGoStopTurn) return; // 턴 진행 중이거나 고/스톱 선택 시에는 표시하지 않음
+
         // Remove any existing bubble first
         hideTurnNotificationBubble();
 
@@ -1510,9 +1512,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // 다음 턴을 위해 인덱스 증가
             currentChanceIndex++;
         } else {
-            // Generic Message
-            message = '김여사님 차례에요.';
-            type = 'player-generic';
+            // Generic Message based on current player
+            if (currentPlayer === 'player') {
+                message = '김여사님 차례에요.';
+                type = 'player-generic';
+            } else {
+                message = `${OPPONENT_NAME} 차례에요.`;
+                type = 'ai-generic';
+            }
         }
 
         renderBubble(message, type);
@@ -1525,14 +1532,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let parentArea;
 
-        if (type === 'ai-warning') {
-            bubble.classList.add('warning-bubble', 'ai-side');
+        if (type === 'ai-warning' || type === 'ai-generic') {
+            bubble.classList.add(type.includes('warning') ? 'warning-bubble' : 'standard-bubble', 'ai-side');
             parentArea = document.getElementById('ai-area');
         } else if (type === 'player-warning') {
             bubble.classList.add('warning-bubble', 'player-side');
             parentArea = document.getElementById('player-area');
         } else {
-            // Generic
+            // Generic Player
             bubble.classList.add('player-side'); // Standard position
             parentArea = document.getElementById('player-area');
         }
