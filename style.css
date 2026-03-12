@@ -293,22 +293,39 @@ button:disabled {
 
 #popup-modal {
     background-color: white;
-    padding: 15px;
-    border-radius: 10px;
+    padding: 20px;
+    border-radius: 15px;
     text-align: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    min-width: 250px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    min-width: 280px;
     max-width: 90%;
-    width: 450px;
-    /* removed max-height to ensure bg covers all content. JS content is now small enough to fit. */
+    width: 480px;
+    max-height: 90vh; /* 화면 높이의 90%를 넘지 않도록 설정 */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* 모달 자체는 안 넘치게 */
+}
+
+#popup-message {
+    font-size: 1.4em;
+    line-height: 1.4;
+    white-space: pre-line;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 0 10px; /* 좌우 패딩만 */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
 }
 
-#popup-message {
-    font-size: 1.8em;
-    line-height: 1.6;
-    white-space: pre-line;
+/* 체크리스트 항목 스타일 정상화 */
+.cheat-list-container {
+    white-space: normal; /* 상위 .popup-message의 pre-line 설정 무력화 */
+}
+.cheat-list-container label {
+    display: block;
+    cursor: pointer;
+    font-size: 1.1em;
 }
 
 #popup-modal.welcome-popup {
@@ -352,6 +369,81 @@ button:disabled {
     background: linear-gradient(to right, #a044ff, #6a3093);
     box-shadow: 0 8px 25px 0 rgba(116, 79, 168, 0.75);
     transform: translateY(-2px);
+}
+
+#popup-modal.certificate-popup {
+    background: #fdfaf0;
+    border: 10px solid #b8860b; /* 테두리 두께 약간 축소 */
+    outline: 2px solid #f1d592;
+    outline-offset: -12px;
+    padding: 45px 40px; /* 패딩을 다시 늘려 여백 확보 */
+    font-family: 'Gungsuh', 'Batang', serif;
+    color: #2c2416;
+    width: 600px;
+    max-width: 95%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+/* 모서리 금색 장식 효과 */
+#popup-modal.certificate-popup::before {
+    content: "";
+    position: absolute;
+    top: 25px; left: 25px; right: 25px; bottom: 25px;
+    border: 1px solid rgba(184, 134, 11, 0.3);
+    pointer-events: none;
+    display: block !important;
+}
+
+#popup-modal.certificate-popup h3 {
+    font-size: 4em; /* 제목 크기를 약간 줄여 여백 확보 */
+    color: #1a1a1a;
+    margin: 10px 0 30px 0; /* 제목 위아래 여백 확보 */
+    letter-spacing: 20px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+#popup-modal.certificate-popup p {
+    font-size: 1.7em;
+    line-height: 1.7;
+    text-align: center;
+    margin: 20px 0;
+    white-space: pre-line;
+    word-break: keep-all;
+    font-weight: bold;
+    color: #332b1a;
+}
+
+#popup-modal.certificate-popup .cert-date {
+    display: block;
+    text-align: center;
+    font-size: 1.3em;
+    margin-top: 20px;
+    color: #555;
+}
+
+#popup-modal.certificate-popup .cert-issuer {
+    display: block;
+    text-align: center;
+    font-size: 1.6em;
+    font-weight: bold;
+    margin-top: 15px;
+    letter-spacing: 3px;
+    color: #222;
+}
+
+#popup-modal.certificate-popup #popup-buttons button {
+    background: #444;
+    color: #fff;
+    border: none;
+    padding: 12px 60px;
+    font-size: 1.3em;
+    font-weight: bold;
+    border-radius: 5px;
+    margin-top: 20px;
+    cursor: pointer;
 }
 
 
@@ -763,8 +855,29 @@ button:disabled {
     cursor: pointer;
 }
 
-#window-controls button:hover {
-    background-color: white;
+#report-btn {
+    background-color: #ff0000;
+    color: white;
+    font-weight: bold;
+    border: 2px solid #fff;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    animation: pulse-red 2s infinite;
+    font-size: 1.2em;
+    margin: 5px;
+}
+
+#report-btn:hover {
+    background-color: #b30000;
+    transform: scale(1.1);
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
 }
 
 /* --- Hint System Styles */

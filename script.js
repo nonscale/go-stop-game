@@ -1,8 +1,58 @@
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-const OPPONENT_NAME = "송도 할머니";
+let OPPONENT_NAME = "서울할머니";
+const NICKNAMES_VERSION = "2.0"; // 배포 버전 (이 숫자를 올리면 사용자 명단이 새 100명으로 자동 갱신됩니다)
+const DEFAULT_NICKNAMES = [
+    "김포 최형님", "남양주 유여사", "의정부 강사장", "파주 정회장", "시흥 오기사", "과천 백고문", "금촌 한반장", "운정 정여사", "다산 이사장", "별내 김회장",
+    "원주 마사장", "춘천 심여사", "동해 남사장", "삼척 태형님", "횡성 소사장", "평창 주형님", "양양 권여사", "정선 국사장", "인제 여여사", "철원 문형님",
+    "익산 황여사", "군산 노형님", "부안 조기사", "고창 유여사", "진도 윤사장", "완도 서형님", "해남 장여사", "강진 문기사", "고흥 하사장", "보성 전여사",
+    "통영 신형님", "사천 유여사", "거제 한사장", "밀양 최여사", "함안 송형님", "창녕 임여사", "고성 백사장", "남해 권여사", "하동 명형님", "산청 도사장",
+    "천안 서여사", "공주 연형님", "보령 우사장", "아산 좌여사", "서산 옥형님", "논산 국사장", "당진 금여사", "금산 태형님", "부여 위사장", "서천 도여사",
+    "강북 미형님", "도봉 견사장", "노원 은여사", "성북 육형님", "중랑 연사장", "동대문 우여사", "성동 가형님", "광진 소사장", "용산 전여사", "중구 기형님",
+    "종로 국사장", "서초 팽여사", "강남 추형님", "송파 범사장", "강동 용여사", "영통 가형님", "권선 편사장", "장안 여여사", "팔달 마형님", "수정 조사장",
+    "중원 민여사", "만안 엄형님", "동안 박사장", "단원 신여사", "상록 유형님", "소사 한사장", "원미 최여사", "오정 송형님", "일산서구 임여사", "일산동구 백사장",
+    "덕양구 권여사", "분당구 명형님", "수지구 도사장", "기흥구 허여사", "처인구 연형님", "단원구 우사장", "상록구 좌여사", "권선구 옥형님", "영통구 국사장", "장안구 금여사",
+    "사창동 황회장", "복대동 노반장", "가경동 조기사", "분평동 유고문", "방서동 윤사장", "용암동 서형님", "금천동 장여사", "탑동 문기사", "우암동 하사장", "내덕동 전여사"
+];
+
+function getNicknames() {
+    const savedVersion = localStorage.getItem('goStopNicknamesVersion');
+    let names = JSON.parse(localStorage.getItem('goStopNicknames') || '[]');
+    
+    // 버전이 다르거나 명단이 비어있으면 새로 초기화 (배포/업데이트 대응)
+    if (savedVersion !== NICKNAMES_VERSION || names.length === 0) {
+        names = [...DEFAULT_NICKNAMES];
+        localStorage.setItem('goStopNicknames', JSON.stringify(names));
+        localStorage.setItem('goStopNicknamesVersion', NICKNAMES_VERSION);
+    }
+    return names;
+}
+
+function banNickname(name) {
+    let names = getNicknames();
+    names = names.filter(n => n !== name);
+    localStorage.setItem('goStopNicknames', JSON.stringify(names));
+
+    // 퇴출 이력 저장 (신고 시간 기록)
+    let history = JSON.parse(localStorage.getItem('goStopBannedHistory') || '[]');
+    history.push({ name: name, bannedAt: Date.now(), reported: false });
+    localStorage.setItem('goStopBannedHistory', JSON.stringify(history));
+}
+
+function getNextOpponentName() {
+    const names = getNicknames();
+    if (names.length === 0) return "전설의 고수";
+    return names[Math.floor(Math.random() * names.length)];
+}
+
+function updateOpponentNameUI(name) {
+    OPPONENT_NAME = name;
+    const oppName = document.getElementById('opponent-name');
+    const oppNameInfo = document.getElementById('opponent-name-info');
+    if (oppName) oppName.textContent = name;
+    if (oppNameInfo) oppNameInfo.textContent = name;
+}
 document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('opponent-name').textContent = OPPONENT_NAME;
-    document.getElementById('opponent-name-info').textContent = OPPONENT_NAME;
+    updateOpponentNameUI(getNextOpponentName());
     // Move deck to the floor area for better layout
     const deckArea = document.getElementById('deck-area');
     const floorArea = document.getElementById('floor-area');
@@ -292,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showPopup(title, message, buttons) {
         return new Promise(resolve => {
             popupTitle.textContent = title;
-            popupMessage.textContent = message;
+            popupMessage.innerHTML = message; // textContent에서 innerHTML로 변경
             popupChoicesDiv.innerHTML = '';
             popupChoicesDiv.style.display = 'none';
 
@@ -1466,7 +1516,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const missingId = godoriCards.find(id => !aiGodori.includes(id));
             const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
             if (!isMissingCapturedByPlayer) {
-                allChances.push({ message: "할머니 고도리 찬스!", type: "ai-warning" });
+                allChances.push({ message: `${OPPONENT_NAME} 고도리 찬스!`, type: "ai-warning" });
             }
         }
 
@@ -1476,7 +1526,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const missingId = hongdanCards.find(id => !aiHongdan.includes(id));
             const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
             if (!isMissingCapturedByPlayer) {
-                allChances.push({ message: "할머니 홍단 찬스!", type: "ai-warning" });
+                allChances.push({ message: `${OPPONENT_NAME} 홍단 찬스!`, type: "ai-warning" });
             }
         }
 
@@ -1486,7 +1536,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const missingId = cheongdanCards.find(id => !aiCheongdan.includes(id));
             const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
             if (!isMissingCapturedByPlayer) {
-                allChances.push({ message: "할머니 청단 찬스!", type: "ai-warning" });
+                allChances.push({ message: `${OPPONENT_NAME} 청단 찬스!`, type: "ai-warning" });
             }
         }
 
@@ -1496,7 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const missingId = chodanCards.find(id => !aiChodan.includes(id));
             const isMissingCapturedByPlayer = playerCaptured.some(c => c.id === missingId);
             if (!isMissingCapturedByPlayer) {
-                allChances.push({ message: "할머니 초단 찬스!", type: "ai-warning" });
+                allChances.push({ message: `${OPPONENT_NAME} 초단 찬스!`, type: "ai-warning" });
             }
         }
 
@@ -2106,24 +2156,196 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Start Game ---
-    (async () => {
-        const welcomeShown = localStorage.getItem('goStopWelcomeShown');
-        if (!welcomeShown) {
-            popupModal.classList.add('welcome-popup');
+    // --- 아무 곳이나 누르면 즉시 전체 화면 전환 (최초 1회만) ---
+    const autoFullscreenListener = () => {
+        enterFullscreen();
+        document.body.removeEventListener('click', autoFullscreenListener);
+        document.body.removeEventListener('touchstart', autoFullscreenListener);
+    };
+    document.body.addEventListener('click', autoFullscreenListener, { once: true });
+    document.body.addEventListener('touchstart', autoFullscreenListener, { once: true });
 
-            const choice = await showPopup(
-                "보건복지부에서 온 편지",
-                "안녕하세요 김여사님.\n\n열심히 산 당신께 5만원을 게임머니로 드렸습니다.\n저랑 게임해서 돈도 벌어서 손녀들에게 맛있는거 사주세요~",
-                [{ text: '준비되면 누르세요', value: 'start' }]
+    // --- Report Button Logic ---
+    const reportBtn = document.getElementById('report-btn');
+    if (reportBtn) {
+        reportBtn.addEventListener('click', async () => {
+            const opponent = document.getElementById('opponent-name').textContent;
+
+            // --- Multi-select Cheat List ---
+            const cheatOptions = [
+                "피 안줌", "차례 안지킴", "점수계산 속임", "보고침", "밑장빼기", "남의 패 훔쳐보기", "딴청 부리기"
+            ];
+            const cheatHtml = `
+                <div class="cheat-list-container" style="text-align: left; padding: 10px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px;">
+                    <h5 style="margin: 0 0 8px 0; border-bottom: 1px solid #eee; padding-bottom: 5px; font-size: 1.1em;">⚠️ 부정행위 리스트 (중복 선택)</h5>
+                    ${cheatOptions.map((opt, i) => `<label style="display: block; margin-bottom: 8px; font-size: 1.05em; cursor: pointer; line-height: 1.2;"><input type="checkbox" name="cheat-type" value="${opt}" style="transform: scale(1.1); margin-right: 8px; vertical-align: middle;"> <span style="vertical-align: middle;">${opt}</span></label>`).join('')}
+                </div>
+            `;
+
+            popupTitle.textContent = "부정행위 신고";
+            popupMessage.innerHTML = `${opponent}의 어떤 부정행위를 감지하셨습니까?<br>보안관의 권한으로 조치하십시오.${cheatHtml}`;
+            popupChoicesDiv.innerHTML = '';
+            popupChoicesDiv.style.display = 'none';
+
+            const popupButtonsDiv = document.getElementById('popup-buttons');
+            popupButtonsDiv.innerHTML = '';
+
+            const createReporterBtn = (text, value, bgColor, textColor = 'white') => {
+                const btn = document.createElement('button');
+                btn.textContent = text;
+                btn.style.backgroundColor = bgColor;
+                btn.style.color = textColor;
+                btn.style.margin = '5px';
+                btn.style.padding = '12px 20px';
+                btn.style.fontWeight = 'bold';
+                btn.addEventListener('click', () => {
+                    const selected = Array.from(document.querySelectorAll('input[name="cheat-type"]:checked')).map(cb => cb.value);
+                    if (selected.length === 0) {
+                        alert("최소 하나 이상의 부정행위를 선택해주세요.");
+                        return;
+                    }
+                    hidePopup();
+                    handleReportAction(opponent, value, selected);
+                });
+                return btn;
+            };
+
+            popupButtonsDiv.appendChild(createReporterBtn('경고', 'warn', '#ffc107', 'red'));
+            popupButtonsDiv.appendChild(createReporterBtn('즉시 처단 (벌금+퇴출)', 'punish', '#dc3545', 'white'));
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '취소';
+            cancelBtn.style.margin = '5px';
+            cancelBtn.addEventListener('click', hidePopup);
+            popupButtonsDiv.appendChild(cancelBtn);
+
+            popupOverlay.classList.remove('hidden');
+        });
+    }
+
+    async function handleReportAction(opponent, action, cheatTypes) {
+        const cheatList = cheatTypes.join(', ');
+        
+        if (action === 'warn') {
+            await showNotificationPopup(
+                "엄중 경고",
+                `<div style="font-size: 1.3em; line-height: 1.6; text-align: center;">
+                    <strong style="color: #dc3545; font-size: 1.8em; text-decoration: underline;">'${opponent}'</strong>에게<br>
+                    엄중히 경고했습니다!<br><br>
+                    관련 사유: <b>${cheatList}</b><br><br>
+                    <span style="font-size: 1.1em; color: #dc3545; font-weight: bold;">다시 한번 적발 시 국물도 없습니다.</span>
+                </div>`
+            );
+        } else if (action === 'punish') {
+            const penalty = Math.min(aiMoney, 10000);
+            aiMoney -= penalty;
+            // playerMoney += penalty; // 김여사님께 주지 않고 복지부에서 징수
+            saveMoney();
+            render();
+
+            await showNotificationPopup(
+                "국고 환수 및 처단 완료",
+                `<div style="font-size: 1.3em; line-height: 1.6; text-align: center;">
+                    보안관 김여사님의 권한으로<br>
+                    <strong style="color: #dc3545; font-size: 1.8em; text-decoration: underline;">'${opponent}'</strong>의<br>
+                    부정행위 벌금 <b>${penalty.toLocaleString()}원</b>을<br>
+                    보건복지부 국고로 전액 환수 조치하였습니다.<br><br>
+                    <span style="font-size: 1.2em; color: #dc3545; font-weight: bold;">해당 인원은 즉시 퇴출됩니다!</span>
+                </div>`
             );
 
-            if (choice === 'start') {
-                enterFullscreen();
+            banNickname(opponent);
+            updateOpponentNameUI(getNextOpponentName());
+            
+            // 새로운 상대방의 판돈을 기본 금액(50000)으로 리셋
+            aiMoney = 50000;
+            saveMoney();
+            render();
+
+            await showNotificationPopup(
+                "새로운 상대 입장",
+                `<div style="font-size: 1.3em; line-height: 1.6; text-align: center;">
+                    공정한 사회를 위해 새로운 상대<br><br>
+                    <strong style="color: #0056b3; font-size: 1.8em; text-decoration: underline;">'${OPPONENT_NAME}'</strong><br><br>
+                    이(가) 입장했습니다!
+                </div>`
+            );
+            startGame(); // 판을 새로 시작합니다.
+        }
+    }
+
+    // --- Start Game ---
+    (async () => {
+        // Show appointment certificate every time
+        popupModal.classList.add('certificate-popup');
+        
+        const today = new Date();
+        const dateString = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+
+        const certContent = `
+            <p style="font-size: 1.55em; line-height: 1.5; margin: 10px 0;">
+                투철한 공정성을 바탕으로 본 프로그램의
+                안정과 질서 유지를 위한 
+                <strong style="font-size: 1.25em;">'보안관'</strong>으로 임명하며, 
+                부정행위자들을 엄히 다스려 주기 바랍니다.
+            </p>
+        `;
+
+        const choice = await showPopup(
+            "임 명 장",
+            certContent,
+            [{ text: '확 인', value: 'start' }]
+        );
+
+        if (choice === 'start') {
+            enterFullscreen();
+        }
+
+        popupModal.classList.remove('certificate-popup');
+
+        // --- 보안감 조치 보고 (24시간 지난 퇴출 명단 보고) ---
+        const history = JSON.parse(localStorage.getItem('goStopBannedHistory') || '[]');
+        const totalBannedCount = history.length;
+        const now = Date.now();
+        const ONE_DAY = 24 * 60 * 60 * 1000;
+        
+        const readyToReport = history.filter(item => !item.reported && (now - item.bannedAt >= ONE_DAY));
+        
+        // 퇴출자가 80명 이상인지 확인
+        let limitNotice = "";
+        if (totalBannedCount >= 80) {
+            limitNotice = `\n\n⚠️ [보안 행정 공보]\n준비된 명단 100명 중 현재까지 총 ${totalBannedCount}명의 불량 사용자가 보안감님의 엄격한 관리 하에 처단되었습니다.\n\n정의로운 사회 구현을 위해 애써주셔서 대단히 감사합니다.`;
+        }
+
+        if (readyToReport.length > 0 || (totalBannedCount >= 80 && !localStorage.getItem('goStopLimitAlertShown'))) {
+            popupModal.classList.add('certificate-popup'); // 일관된 고풍스러운 스타일 적용
+            
+            let reportMessage = "";
+            if (readyToReport.length > 0) {
+                const nameList = readyToReport.map(item => `• ${item.name}`).join('\n');
+                reportMessage = `김여사 보안감님께 보고드립니다.\n\n최근 신고하신 아래의 부정행위자들에 대하여 국고 환수 및 영구 제명 조치를 완료하였습니다.\n\n[처단 대상 명단]\n${nameList}`;
+            } else {
+                reportMessage = `김여사 보안감님, 정기 보안 행정 보고를 드립니다.`;
             }
 
-            popupModal.classList.remove('welcome-popup');
-            localStorage.setItem('goStopWelcomeShown', 'true');
+            const finalMessage = `${reportMessage}${limitNotice}\n\n정의로운 사회 구현에 앞장서 주셔서 대단히 감사합니다.`;
+            
+            await showPopup(
+                "보안감 행정 보고",
+                finalMessage,
+                [{ text: '수고했다', value: 'ok' }]
+            );
+            
+            // 보고 완료된 항목으로 표시
+            readyToReport.forEach(item => item.reported = true);
+            localStorage.setItem('goStopBannedHistory', JSON.stringify(history));
+            
+            // 80명 알림은 한 번만 보이도록 설정 (새로운 처단이 생기면 다시 보일 수 있음)
+            if (totalBannedCount >= 80) {
+                localStorage.setItem('goStopLimitAlertShown', 'true');
+            }
+            
+            popupModal.classList.remove('certificate-popup');
         }
 
         loadGameData();
