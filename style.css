@@ -855,23 +855,47 @@ button:disabled {
     cursor: pointer;
 }
 
+#player-conditional-stop-btn {
+    background-color: #28a745;
+    color: #ffffff;
+    font-weight: bold;
+    border: 2px solid #218838;
+    border-radius: 5px;
+    padding: 14px 28px;
+    font-size: 1.5em;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    margin: 5px;
+    transition: background-color 0.1s, transform 0.1s;
+}
+
+#player-conditional-stop-btn:hover {
+    background-color: #218838;
+    transform: scale(1.05);
+}
+
+#player-conditional-stop-btn:active {
+    background-color: #1e7e34;
+    transform: scale(0.98);
+}
+
 #report-btn {
     background-color: #ffffff;
     color: #808080;
     font-weight: bold;
-    border: 2px solid #ccc;
-    border-radius: 5px;
-    padding: 10px 20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 6px 12px;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-    font-size: 1.2em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    font-size: 0.9em;
     margin: 5px;
     transition: background-color 0.1s, color 0.1s;
 }
 
 #report-btn:hover {
     background-color: #f0f0f0;
-    transform: scale(1.05);
+    transform: scale(1.03);
 }
 
 #report-btn:active {
