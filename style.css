@@ -868,50 +868,56 @@ button:disabled {
 
 #player-conditional-stop-btn {
     background-color: #ffffff;
-    color: #000000;
+    color: #a5a5a5;
     font-weight: bold;
-    border: 2px solid #333333;
+    border: 1px solid #ddd;
     border-radius: 5px;
     padding: 7px 16px;
     font-size: 1em;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
     margin: 0;
-    transition: background-color 0.1s, transform 0.1s;
+    transition: all 0.15s ease;
 }
 
 #player-conditional-stop-btn:hover {
-    background-color: #f0f0f0;
-    transform: scale(1.05);
+    background-color: #f8f8f8;
+    color: #666666;
+    border-color: #bbb;
+    transform: scale(1.03);
 }
 
 #player-conditional-stop-btn:active {
-    background-color: #e0e0e0;
+    background-color: #ececec;
+    color: #333333;
     transform: scale(0.98);
 }
 
 #report-btn {
     background-color: #ffffff;
-    color: #808080;
+    color: #a5a5a5;
     font-weight: bold;
-    border: 2px solid #ccc;
+    border: 1px solid #ddd;
     border-radius: 5px;
     padding: 7px 16px;
     font-size: 1em;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
     margin: 0;
-    transition: background-color 0.1s, color 0.1s, transform 0.1s;
+    transition: all 0.15s ease;
 }
 
 #report-btn:hover {
-    background-color: #f0f0f0;
-    transform: scale(1.05);
+    background-color: #f8f8f8;
+    color: #666666;
+    border-color: #bbb;
+    transform: scale(1.03);
 }
 
 #report-btn:active {
     background-color: #ff0000;
     color: #ffffff;
+    border-color: #ff0000;
     transform: scale(0.98);
 }
 
