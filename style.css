@@ -855,17 +855,28 @@ button:disabled {
     cursor: pointer;
 }
 
+.player-btn-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+}
+
+.player-btn-group button {
+    width: 100%;
+}
+
 #player-conditional-stop-btn {
     background-color: #ffffff;
     color: #000000;
     font-weight: bold;
     border: 2px solid #333333;
     border-radius: 5px;
-    padding: 14px 28px;
-    font-size: 1.5em;
+    padding: 7px 16px;
+    font-size: 1em;
     cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    margin: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    margin: 0;
     transition: background-color 0.1s, transform 0.1s;
 }
 
@@ -885,11 +896,11 @@ button:disabled {
     font-weight: bold;
     border: 2px solid #ccc;
     border-radius: 5px;
-    padding: 14px 28px;
-    font-size: 1.5em;
+    padding: 7px 16px;
+    font-size: 1em;
     cursor: pointer;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    margin: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    margin: 0;
     transition: background-color 0.1s, color 0.1s, transform 0.1s;
 }
 
